@@ -1,5 +1,7 @@
 using MinimumViableTables
-using Base.Test
+using Test
 
-# write your own tests here
-@test 1 == 2
+using MinimumViableTables: _issubset, _headsubset, clean
+
+include("util.jl")
+include("index.jl")
