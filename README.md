@@ -13,6 +13,7 @@ will provide:
  * Fast iteration of rows - strongly typed data structures.
  * Extensible system of acceleration indices - an external package may introduce e.g. 
    accelerated spatial indexing.
+ * A "complete" system for relational algebra
 
 A "table" is a finite relation, which is simply a collection of named tuples (rows). Here,
 we think of this as any `AbstractVector{<:NamedTuple{names}}` (though we may extend this to
