@@ -54,5 +54,13 @@ end
     end
 
     @testset "Projecting multiple indexes" begin
+        p = Project{(:a,)}()
+        
+        @test p(()) === ()
+        @test p((NoIndex(),)) === ()
+        @test p((UniqueIndex{(:a,)}(),)) === (UniqueIndex{(:a,)}(),)
+        @test p((UniqueIndex{(:b,)}(),)) === ()
+        @test p((UniqueIndex{(:a,:b)}(),)) === ()
+        @test p((UniqueIndex{(:a,)}(), UniqueIndex{(:b,)}())) === (UniqueIndex{(:a,)}(),)
     end
 end

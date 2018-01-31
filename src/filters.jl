@@ -22,6 +22,8 @@ promote_indexes(t::Tuple{Vararg{AbstractIndex}}) = t[1]
 promote_indexes(t::Tuple{}) = NoIndex()
 promote_index(indexes...) = promote_indexes(indexes)
 
+# map for IsEqual
+
 function map(ie::IsEqual{names}, t::Table) where {names}
     # First get the indices using the acceleration indices
     t_projected = Project(names)(t)
@@ -29,7 +31,7 @@ function map(ie::IsEqual{names}, t::Table) where {names}
     return _map(ie, t_projected, promote_index(t_projected.indexes...))
 end
 
-function _map(ie::IsEqual{names}, t::Table{names}, ::AbstractIndex) where {names}
+function _map(ie::IsEqual{names}, t::Table{names}, ::NoIndex) where {names}
     map(row -> isequal(_values(row), ie.data), t)::AbstractVector{Bool}
 end
 
@@ -54,6 +56,19 @@ function _map(ie::IsEqual{names}, t::Table{names}, index::SortIndex{names}) wher
     return out
 end
 
+function _map(ie::IsEqual{names}, t::Table{names}, index::SortIndex{names2}) where {names, names2}
+    out = fill(false, length(t))
+
+    searchrow = Project{names2}()(NamedTuple{names}(ie.data))
+    t_projected = Project{names2}()(t)
+    range = searchsorted(t_projected, searchrow)
+    @inbounds @simd for i ∈ range
+         out[range] = ie(t[i])
+    end
+    
+    return out
+end
+
 function _map(ie::IsEqual{names}, t::Table{names}, index::UniqueSortIndex{names}) where {names}
     n = length(t)
     out = fill(false, n)
@@ -67,7 +82,19 @@ function _map(ie::IsEqual{names}, t::Table{names}, index::UniqueSortIndex{names}
     return out
 end
 
-# TODO sorted indices of a subset of matching columns
+function _map(ie::IsEqual{names}, t::Table{names}, index::UniqueSortIndex{names2}) where {names, names2}
+    n = length(t)
+    out = fill(false, n)
+
+    searchrow = Project{names2}()(NamedTuple{names}(ie.data))
+    t_projected = Project{names2}()(t)
+    first_greater_or_equal = searchsortedfirst(t_projected, searchrow)
+    if first_greater_or_equal <= n
+        @inbounds out[first_greater_or_equal] = ie(t[first_greater_or_equal])
+    end
+    
+    return out
+end
 
 function _map(ie::IsEqual{names}, t::Table{names}, index::HashIndex{names}) where {names}
     out = fill(false, length(t))
@@ -120,3 +147,8 @@ function _map(ie::IsEqual{names}, t::Table{names}, index::UniqueHashIndex{names2
     
     return out
 end
+
+# filter for IsEqual
+
+# TODO findall
+# TODO similarly for findfirst, findlast, findnext, findprev, findmin, findmax
