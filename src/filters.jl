@@ -1,6 +1,6 @@
 # Filters are predicates on rows which can hopefully take advantage of acceleration indexes
 
-struct IsEqual{names, D <: Tuple}
+struct IsEqual{names, D <: Tuple} <: Function
     data::D
 end
 IsEqual(;kwargs...) = IsEqual(kwargs.data)
@@ -18,8 +18,9 @@ function (ie::IsEqual{names})(x::NamedTuple{names2}) where {names, names2}
     end
 end
 
-promote_indexes(t::Tuple{Vararg{Indexes}}) = t[1]
+promote_indexes(t::Tuple{Vararg{AbstractIndex}}) = t[1]
 promote_indexes(t::Tuple{}) = NoIndex()
+promote_index(indexes...) = promote_indexes(indexes)
 
 function map(ie::IsEqual{names}, t::Table) where {names}
     # First get the indices using the acceleration indices
@@ -28,11 +29,11 @@ function map(ie::IsEqual{names}, t::Table) where {names}
     return _map(ie, t_projected, promote_index(t_projected.indexes...))
 end
 
-function _map(ie::IsEqual{names}, t::Table, ::NoIndex) where {names}
-    map(row -> isequal(_vales(row), ie.data), t)::AbstractVector{Bool}
+function _map(ie::IsEqual{names}, t::Table{names}, ::AbstractIndex) where {names}
+    map(row -> isequal(_values(row), ie.data), t)::AbstractVector{Bool}
 end
 
-function _map(ie::IsEqual{names}, t::Table, ::UniqueIndex) where {names}
+function _map(ie::IsEqual{names}, t::Table{names}, ::UniqueIndex) where {names}
     out = fill(false, length(t))
     i = findfirst(ie, t)
     if i === nothing
@@ -43,24 +44,49 @@ function _map(ie::IsEqual{names}, t::Table, ::UniqueIndex) where {names}
     end
 end
 
-# TODO sorted indices
-
-function _map(ie::IsEqual{names}, t::Table, index::HashIndex{names}) where {names}
+function _map(ie::IsEqual{names}, t::Table{names}, index::SortIndex{names}) where {names}
     out = fill(false, length(t))
 
-    if haskey(index.d, ie.data) # TODO make faster
-        inds = index.d[ie.data]
+    searchrow = NamedTuple{names}(ie.data)
+    range = searchsorted(t, searchrow)
+    @inbounds out[range] = true
+    
+    return out
+end
+
+function _map(ie::IsEqual{names}, t::Table{names}, index::UniqueSortIndex{names}) where {names}
+    n = length(t)
+    out = fill(false, n)
+
+    searchrow = NamedTuple{names}(ie.data)
+    first_greater_or_equal = searchsortedfirst(t, searchrow)
+    if first_greater_or_equal <= n
+        @inbounds out[first_greater_or_equal] = ie(t[first_greater_or_equal])
+    end
+    
+    return out
+end
+
+# TODO sorted indices of a subset of matching columns
+
+function _map(ie::IsEqual{names}, t::Table{names}, index::HashIndex{names}) where {names}
+    out = fill(false, length(t))
+
+    key = NamedTuple{names}(ie.data)
+    if haskey(index.dict, key) # TODO make faster
+        inds = index.dict[key]
         @inbounds out[inds] = true
     end
     
     return out
 end
 
-function _map(ie::IsEqual{names}, t::Table, index::HashIndex{names2}) where {names, names2}
+function _map(ie::IsEqual{names}, t::Table{names}, index::HashIndex{names2}) where {names, names2}
     out = fill(false, length(t))
 
-    if haskey(index.d, project(ie.data, names2))
-        inds = index.d[ie.data] # TODO make faster
+    key = project(NamedTuple{names}(ie.data), names2)
+    if haskey(index.dict, key)
+        inds = index.dict[key] # TODO make faster
         @inbounds for i in inds
             if ie(t[i])
                 out[i] = true
@@ -71,23 +97,24 @@ function _map(ie::IsEqual{names}, t::Table, index::HashIndex{names2}) where {nam
     return out
 end
 
-function _map(ie::IsEqual{names}, t::Table, index::UniqueHashIndex{names}) where {names}
+function _map(ie::IsEqual{names}, t::Table{names}, index::UniqueHashIndex{names}) where {names}
     out = fill(false, length(t))
 
-    if haskey(index.d, ie.data) # TODO make faster
-        i = index.d[ie.data]
+    key = NamedTuple{names}(ie.data)
+    if haskey(index.dict, key) # TODO make faster
+        i = index.dict[key]
         @inbounds out[i] = true
     end
     
     return out
 end
 
-function _map(ie::IsEqual{names}, t::Table, index::UniqueHashIndex{names2}) where {names, names2}
+function _map(ie::IsEqual{names}, t::Table{names}, index::UniqueHashIndex{names2}) where {names, names2}
     out = fill(false, length(t))
-    key = project(ie.data, names2)
+    key = project(NamedTuple{names}(ie.data), names2)
 
-    if haskey(index.d, key) # TODO make faster
-        i = index.d[key]
+    if haskey(index.dict, key) # TODO make faster
+        i = index.dict[key]
         @inbounds out[i] = ie(t[i])
     end
     

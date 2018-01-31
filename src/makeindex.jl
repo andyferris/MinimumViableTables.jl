@@ -2,6 +2,7 @@
 NoIndex(t::Table) = NoIndex()
 
 function UniqueIndex{names}(t::Table) where {names}
+    # TODO check columns actually exist in table
     # TODO add uniqueness check? Maybe a keyword argument or `@checkbounds` or something
     return UniqueIndex{names}()
 end
@@ -19,9 +20,9 @@ end
 
 function HashIndex{names}(t::Table) where {names}
     t_projected = Project(names)(t)
-    d = Dict{eltype(t), Vector{Int}}()
+    d = Dict{eltype(t_projected), Vector{Int}}()
     for i in keys(t_projected) # TODO make faster
-        row = d[i]
+        row = t_projected[i]
         if haskey(d, row)
             push!(d[row], i)
         else
@@ -31,12 +32,11 @@ function HashIndex{names}(t::Table) where {names}
     return HashIndex{names}(d)
 end
 
-
 function UniqueHashIndex{names}(t::Table) where {names}
     t_projected = Project(names)(t)
-    d = Dict{eltype(t), Int}()
+    d = Dict{eltype(t_projected), Int}()
     for i in keys(t_projected) # TODO make faster
-        row = d[i]
+        row = t_projected[i]
         if haskey(d, row)
             error("Columns $names do not contain unique values")
         else
@@ -47,7 +47,7 @@ function UniqueHashIndex{names}(t::Table) where {names}
 end
 
 # Generic function for adding a new index to a Table
-function makeindex(::Type{I}, t::Table{names}) where {I <: AbstractIndex, names}
+function addindex(t::Table{names}, ::Type{I}) where {I <: AbstractIndex, names}
     newindex = I(t)
     return Table{names}(t.data, (t.indexes..., newindex))
 end

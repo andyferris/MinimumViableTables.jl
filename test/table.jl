@@ -33,6 +33,4 @@
     @test @inferred(Project((:a,))(t)) === Table(a = va)
     @test @inferred(Project((:b,))(t)) === Table(b = vb)
     @test @inferred(Project((:b, :a))(t)) === Table(b = vb, a = va)
-
-
 end
