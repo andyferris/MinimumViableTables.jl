@@ -148,7 +148,72 @@ function _map(ie::IsEqual{names}, t::Table{names}, index::UniqueHashIndex{names2
     return out
 end
 
-# filter for IsEqual
+# findall for IsEqual
 
-# TODO findall
+function findall(ie::IsEqual{names}, t::Table) where {names}
+    # First get the indices using the acceleration indices
+    t_projected = Project(names)(t)
+    index = promote_index(t_projected.indexes...)
+    return _findall(ie, t_projected, promote_index(t_projected.indexes...))
+end
+
+function _findall(ie::IsEqual{names}, t::Table{names}, ::NoIndex) where {names}
+    findall(row -> isequal(_values(row), ie.data), t)::AbstractVector{<:Int}
+end
+
+function _findall(ie::IsEqual{names}, t::Table{names}, ::UniqueIndex) where {names}
+    i = findfirst(ie, t)
+    if i === nothing
+        return Int[]
+    else
+        return Int[i]
+    end
+end
+
+function _findall(ie::IsEqual{names}, t::Table{names}, index::SortIndex{names}) where {names}
+    searchrow = NamedTuple{names}(ie.data)
+    return searchsorted(t, searchrow)
+end
+
+function _findall(ie::IsEqual{names}, t::Table{names}, index::SortIndex{names2}) where {names, names2}
+    searchrow = Project{names2}()(NamedTuple{names}(ie.data))
+    t_projected = Project{names2}()(t)
+    range = searchsorted(t_projected, searchrow)
+    out = Int[]
+    @inbounds for i ∈ range
+        if ie(t[i])
+            push!(out, i)
+        end
+    end
+
+    return out
+end
+
+function _findall(ie::IsEqual{names}, t::Table{names}, index::UniqueSortIndex{names}) where {names}
+    n = length(t)
+    searchrow = NamedTuple{names}(ie.data)
+    first_greater_or_equal = searchsortedfirst(t, searchrow)
+    if first_greater_or_equal <= n && ie(t[first_greater_or_equal])
+        return Int[first_greater_or_equal]
+    else
+        return Int[]
+    end
+end
+
+function _findall(ie::IsEqual{names}, t::Table{names}, index::UniqueSortIndex{names2}) where {names, names2}
+    n = length(t)
+    searchrow = Project{names2}()(NamedTuple{names}(ie.data))
+    t_projected = Project{names2}()(t)
+    first_greater_or_equal = searchsortedfirst(t_projected, searchrow)
+    if first_greater_or_equal <= n && ie(t[first_greater_or_equal])
+        return Int[first_greater_or_equal]
+    else
+        return Int[]
+    end
+end
+
+# TODO findall with HashIndex/UniqueHashIndex
+
 # TODO similarly for findfirst, findlast, findnext, findprev, findmin, findmax
+
+# TODO filter for IsEqual
