@@ -29,7 +29,7 @@
     end
 
     @testset "HashIndex" begin
-        d = Dict((3,2.0) => [1, 3], (4,1.0) => [2])
+        d = Dict((a=3, b=2.0) => [1, 3], (a=4, b=1.0) => [2])
         @test project(HashIndex{(:a, :b)}(d), (:a, :b)) === HashIndex{(:a, :b)}(d)
         @test project(HashIndex{(:a, :b)}(d), (:b, :a)) === HashIndex{(:a, :b)}(d)
         @test project(HashIndex{(:a, :b)}(d), (:a,)) === NoIndex()
@@ -37,7 +37,7 @@
     end
 
     @testset "UniqueHashIndex" begin
-        d = Dict((3,2.0) => 1, (4,1.0) => 2)
+        d = Dict((a=3, b=2.0) => 1, (a=4, b=1.0) => 2)
         @test project(UniqueHashIndex{(:a, :b)}(d), (:a, :b)) === UniqueHashIndex{(:a, :b)}(d)
         @test project(UniqueHashIndex{(:a, :b)}(d), (:b, :a)) === UniqueHashIndex{(:a, :b)}(d)
         @test project(UniqueHashIndex{(:a, :b)}(d), (:a,)) === NoIndex()

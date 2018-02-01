@@ -60,14 +60,14 @@ copy(index::UniqueSortIndex{names}) where {names} = UniqueSortIndex{names}(copy(
 end
 
 # Hash table acceleration index to unknown number of rows
-struct HashIndex{names, D <: AbstractDict{<:Any, <:AbstractVector{Int}}} <: AbstractIndex{names}
+struct HashIndex{names, D <: AbstractDict{<:NamedTuple{names}, <:AbstractVector{Int}}} <: AbstractIndex{names}
     dict::D # Mapping from column values to list of matching indices
 end
 HashIndex{names}(d::D) where {names, D} = HashIndex{names, D}(d)
 copy(index::HashIndex{names}) where {names} = HashIndex{names}(copy(index.d))
 
 # Hash table acceleration index to unique rows
-struct UniqueHashIndex{names, D <: AbstractDict{<:Any, Int}} <: AbstractUniqueIndex{names}
+struct UniqueHashIndex{names, D <: AbstractDict{<:NamedTuple{names}, Int}} <: AbstractUniqueIndex{names}
     dict::D # Mapping from column values to unique matching index
 end
 UniqueHashIndex{names}(d::D) where {names, D} = UniqueHashIndex{names, D}(d)

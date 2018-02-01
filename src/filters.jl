@@ -212,7 +212,39 @@ function _findall(ie::IsEqual{names}, t::Table{names}, index::UniqueSortIndex{na
     end
 end
 
-# TODO findall with HashIndex/UniqueHashIndex
+function _findall(ie::IsEqual{names}, t::Table{names}, index::HashIndex{names}) where {names}
+    searchrow = NamedTuple{names}(ie.data)
+    return get(() -> Int[], index.dict, searchrow)
+end
+
+function _findall(ie::IsEqual{names}, t::Table{names}, index::HashIndex{names2}) where {names, names2}
+    searchrow = Project{names2}()(NamedTuple{names}(ie.data))
+    inds = get(() -> Int[], index.dict, searchrow)
+    if length(inds) == 0
+        return inds
+    end
+    return filter(i -> @inbounds(ie(t[i])), inds)
+end
+
+function _findall(ie::IsEqual{names}, t::Table{names}, index::UniqueHashIndex{names}) where {names}
+    searchrow = NamedTuple{names}(ie.data)
+    i = get(() -> 0, index.dict, searchrow)
+    if i > 0
+        return Int[i]
+    else
+        return Int[]
+    end
+end
+
+function _findall(ie::IsEqual{names}, t::Table{names}, index::UniqueHashIndex{names2}) where {names, names2}
+    searchrow = Project{names2}()(NamedTuple{names}(ie.data))
+    i = get(() -> 0, index.dict, searchrow)
+    if i > 0 && @inbounds(ie(t[i]))
+        return Int[i]
+    else
+        return Int[]
+    end
+end
 
 # TODO similarly for findfirst, findlast, findnext, findprev, findmin, findmax
 
