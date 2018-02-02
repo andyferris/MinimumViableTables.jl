@@ -176,8 +176,8 @@ function _findall(ie::IsEqual{names}, t::Table{names}, index::SortIndex{names}) 
 end
 
 function _findall(ie::IsEqual{names}, t::Table{names}, index::SortIndex{names2}) where {names, names2}
-    searchrow = Project{names2}()(NamedTuple{names}(ie.data))
-    t_projected = Project{names2}()(t)
+    searchrow = Project(names2)(NamedTuple{names}(ie.data))
+    t_projected = Project(names2)(t)
     range = searchsorted(t_projected, searchrow)
     out = Int[]
     @inbounds for i ∈ range
@@ -202,8 +202,8 @@ end
 
 function _findall(ie::IsEqual{names}, t::Table{names}, index::UniqueSortIndex{names2}) where {names, names2}
     n = length(t)
-    searchrow = Project{names2}()(NamedTuple{names}(ie.data))
-    t_projected = Project{names2}()(t)
+    searchrow = Project(names2)(NamedTuple{names}(ie.data))
+    t_projected = Project(names2)(t)
     first_greater_or_equal = searchsortedfirst(t_projected, searchrow)
     if first_greater_or_equal <= n && ie(t[first_greater_or_equal])
         return Int[first_greater_or_equal]
@@ -218,7 +218,7 @@ function _findall(ie::IsEqual{names}, t::Table{names}, index::HashIndex{names}) 
 end
 
 function _findall(ie::IsEqual{names}, t::Table{names}, index::HashIndex{names2}) where {names, names2}
-    searchrow = Project{names2}()(NamedTuple{names}(ie.data))
+    searchrow = Project(names2)(NamedTuple{names}(ie.data))
     inds = get(() -> Int[], index.dict, searchrow)
     if length(inds) == 0
         return inds
@@ -237,7 +237,7 @@ function _findall(ie::IsEqual{names}, t::Table{names}, index::UniqueHashIndex{na
 end
 
 function _findall(ie::IsEqual{names}, t::Table{names}, index::UniqueHashIndex{names2}) where {names, names2}
-    searchrow = Project{names2}()(NamedTuple{names}(ie.data))
+    searchrow = Project(names2)(NamedTuple{names}(ie.data))
     i = get(() -> 0, index.dict, searchrow)
     if i > 0 && @inbounds(ie(t[i]))
         return Int[i]
@@ -248,4 +248,22 @@ end
 
 # TODO similarly for findfirst, findlast, findnext, findprev, findmin, findmax
 
-# TODO filter for IsEqual
+function filter(ie::IsEqual{names}, t::Table) where {names}
+    # First get the indices using the acceleration indices
+    t_projected = Project(names)(t)
+    index = promote_index(t_projected.indexes...)
+    inds = _filter_indices(ie, t_projected, index) # Uses `map` or `findall` depending on available indices
+    @inbounds return t[inds]
+end
+
+function _filter_indices(ie::IsEqual{names}, t::Table{names}, index::AbstractIndex) where {names}
+    return _map(ie, t, index)
+end
+
+function _filter_indices(ie::IsEqual{names}, t::Table{names}, index::UniqueIndex) where {names}
+    return _findall(ie, t, index)
+end
+
+function _filter_indices(ie::IsEqual{names}, t::Table{names}, index::SortIndex{names}) where {names}
+    return _findall(ie, t, index)
+end

@@ -41,6 +41,18 @@ colnames(::Table{names}) where {names} = names
     end
 end
 
+@generated function getindex(t::Table{names}, i::AbstractVector{Int}) where {names}
+    exprs = [:(t.data[$j][i]) for j = 1:length(names)]
+    return quote
+        @_propagate_inbounds_meta
+        return Table{names}($(Expr(:tuple, exprs...)), ())  # Indexing always removes acceleration indexes, for now
+    end
+end
+
+function getindex(t::Table{names}, ::Colon) where {names}
+    return Table{names}(copy.(t.data), ()) # Indexing always removes acceleration indexes, for now (compare with `copy`)
+end
+
 @generated function setindex!(t::Table{names}, v::NamedTuple{names2}, i) where {names, names2}
     if !issetequal(names, names2)
         return quote

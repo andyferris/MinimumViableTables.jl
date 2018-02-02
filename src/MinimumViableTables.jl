@@ -3,7 +3,7 @@ module MinimumViableTables
 using Base: @pure, @propagate_inbounds, @_propagate_inbounds_meta, @_inline_meta, 
             getproperty
 
-import Base: size, axes, getindex, setindex!, show, similar, copy, filter, map
+import Base: size, axes, getindex, setindex!, show, similar, copy, filter, map, findall
 
 using Indexing
 
