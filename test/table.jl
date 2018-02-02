@@ -11,6 +11,7 @@
     @test Table{(:a, :b)}((b = vb, a = va), ()) === t
 
     @test colnames(t) === (:a, :b)
+    @test columns(t) === (a = va, b = vb)
     @test length(t) === 3
     @test size(t) === (3,)
     @test axes(t) === (Base.OneTo(3),)

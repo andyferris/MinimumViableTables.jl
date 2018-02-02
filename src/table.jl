@@ -29,6 +29,7 @@ function Table{names}(nt::NamedTuple{names2, <:Tuple{Vararg{AbstractVector}}}, i
 end
 
 colnames(::Table{names}) where {names} = names
+columns(t::Table{names}) where {names} = NamedTuple{names}(t.data)
 
 @inline size(t::Table) = size(first(t.data))
 @inline axes(t::Table) = axes(first(t.data))

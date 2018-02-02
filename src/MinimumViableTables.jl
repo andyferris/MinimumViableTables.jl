@@ -7,7 +7,7 @@ import Base: size, axes, getindex, setindex!, show, similar, copy, filter, map, 
 
 using Indexing
 
-export colnames, project, Project, addindex
+export colnames, columns, project, Project, addindex
 
 export AbstractIndex, AbstractUniqueIndex, NoIndex, UniqueIndex, HashIndex, UniqueHashIndex,
        SortIndex, UniqueSortIndex
