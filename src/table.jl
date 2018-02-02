@@ -100,3 +100,8 @@ end
     indexes = project(t.indexes, names)
     return Table{names}(data, indexes)
 end
+
+@inline function (r::Rename{oldnames, newnames})(t::Table{names}) where {oldnames, newnames, names}
+    names2 = _rename(oldnames, newnames, names)
+    return Table{names2}(t.data, r(t.indexes))
+end

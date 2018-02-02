@@ -7,6 +7,7 @@ using MinimumViableTables: _issubset, _issetequal, _headsubset, _makevectors, _v
 
 include("util.jl")
 include("project.jl")
+include("rename.jl")
 include("index.jl")
 include("table.jl")
 include("makeindex.jl")

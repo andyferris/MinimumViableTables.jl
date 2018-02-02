@@ -99,7 +99,7 @@ end
 function _map(ie::IsEqual{names}, t::Table{names}, index::HashIndex{names}) where {names}
     out = fill(false, length(t))
 
-    key = NamedTuple{names}(ie.data)
+    key = ie.data
     if haskey(index.dict, key) # TODO make faster
         inds = index.dict[key]
         @inbounds out[inds] = true
@@ -111,7 +111,7 @@ end
 function _map(ie::IsEqual{names}, t::Table{names}, index::HashIndex{names2}) where {names, names2}
     out = fill(false, length(t))
 
-    key = project(NamedTuple{names}(ie.data), names2)
+    key = values(project(NamedTuple{names}(ie.data), names2))
     if haskey(index.dict, key)
         inds = index.dict[key] # TODO make faster
         @inbounds for i in inds
@@ -127,7 +127,7 @@ end
 function _map(ie::IsEqual{names}, t::Table{names}, index::UniqueHashIndex{names}) where {names}
     out = fill(false, length(t))
 
-    key = NamedTuple{names}(ie.data)
+    key = ie.data
     if haskey(index.dict, key) # TODO make faster
         i = index.dict[key]
         @inbounds out[i] = true
@@ -138,7 +138,7 @@ end
 
 function _map(ie::IsEqual{names}, t::Table{names}, index::UniqueHashIndex{names2}) where {names, names2}
     out = fill(false, length(t))
-    key = project(NamedTuple{names}(ie.data), names2)
+    key = values(project(NamedTuple{names}(ie.data), names2))
 
     if haskey(index.dict, key) # TODO make faster
         i = index.dict[key]
@@ -213,12 +213,12 @@ function _findall(ie::IsEqual{names}, t::Table{names}, index::UniqueSortIndex{na
 end
 
 function _findall(ie::IsEqual{names}, t::Table{names}, index::HashIndex{names}) where {names}
-    searchrow = NamedTuple{names}(ie.data)
+    searchrow = ie.data
     return get(() -> Int[], index.dict, searchrow)
 end
 
 function _findall(ie::IsEqual{names}, t::Table{names}, index::HashIndex{names2}) where {names, names2}
-    searchrow = Project(names2)(NamedTuple{names}(ie.data))
+    searchrow = values(Project(names2)(NamedTuple{names}(ie.data)))
     inds = get(() -> Int[], index.dict, searchrow)
     if length(inds) == 0
         return inds
@@ -227,7 +227,7 @@ function _findall(ie::IsEqual{names}, t::Table{names}, index::HashIndex{names2})
 end
 
 function _findall(ie::IsEqual{names}, t::Table{names}, index::UniqueHashIndex{names}) where {names}
-    searchrow = NamedTuple{names}(ie.data)
+    searchrow = ie.data
     i = get(() -> 0, index.dict, searchrow)
     if i > 0
         return Int[i]
@@ -237,7 +237,7 @@ function _findall(ie::IsEqual{names}, t::Table{names}, index::UniqueHashIndex{na
 end
 
 function _findall(ie::IsEqual{names}, t::Table{names}, index::UniqueHashIndex{names2}) where {names, names2}
-    searchrow = Project(names2)(NamedTuple{names}(ie.data))
+    searchrow = values(Project(names2)(NamedTuple{names}(ie.data)))
     i = get(() -> 0, index.dict, searchrow)
     if i > 0 && @inbounds(ie(t[i]))
         return Int[i]

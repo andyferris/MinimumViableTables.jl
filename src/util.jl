@@ -52,3 +52,5 @@ end
         return tuple($(exprs...))
     end
 end
+
+_tupletype(::Type{NamedTuple{names, T}}) where {names, T <: Tuple} = T
