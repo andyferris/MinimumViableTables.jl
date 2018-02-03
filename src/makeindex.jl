@@ -49,5 +49,5 @@ end
 # Generic function for adding a new index to a Table
 function addindex(t::Table{names}, ::Type{I}) where {I <: AbstractIndex, names}
     newindex = I(t)
-    return Table{names}(t.data, (t.indexes..., newindex))
+    return Table{names}(t.data, (getindexes(t)..., newindex))
 end

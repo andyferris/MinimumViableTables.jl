@@ -18,17 +18,17 @@ function (ie::IsEqual{names})(x::NamedTuple{names2}) where {names, names2}
     end
 end
 
-promote_indexes(t::Tuple{Vararg{AbstractIndex}}) = t[1]
-promote_indexes(t::Tuple{}) = NoIndex()
-promote_index(indexes...) = promote_indexes(indexes)
+promote_getindexes(t::Tuple{Vararg{AbstractIndex}}) = t[1]
+promote_getindexes(t::Tuple{}) = NoIndex()
+promote_index(indexes...) = promote_getindexes(indexes)
 
 # map for IsEqual
 
 function map(ie::IsEqual{names}, t::Table) where {names}
     # First get the indices using the acceleration indices
     t_projected = Project(names)(t)
-    index = promote_index(t_projected.indexes...)
-    return _map(ie, t_projected, promote_index(t_projected.indexes...))
+    index = promote_index(getindexes(t_projected)...)
+    return _map(ie, t_projected, promote_index(getindexes(t_projected)...))
 end
 
 function _map(ie::IsEqual{names}, t::Table{names}, ::NoIndex) where {names}
@@ -153,8 +153,8 @@ end
 function findall(ie::IsEqual{names}, t::Table) where {names}
     # First get the indices using the acceleration indices
     t_projected = Project(names)(t)
-    index = promote_index(t_projected.indexes...)
-    return _findall(ie, t_projected, promote_index(t_projected.indexes...))
+    index = promote_index(getindexes(t_projected)...)
+    return _findall(ie, t_projected, promote_index(getindexes(t_projected)...))
 end
 
 function _findall(ie::IsEqual{names}, t::Table{names}, ::NoIndex) where {names}
@@ -251,7 +251,7 @@ end
 function filter(ie::IsEqual{names}, t::Table) where {names}
     # First get the indices using the acceleration indices
     t_projected = Project(names)(t)
-    index = promote_index(t_projected.indexes...)
+    index = promote_index(getindexes(t_projected)...)
     inds = _filter_indices(ie, t_projected, index) # Uses `map` or `findall` depending on available indices
     @inbounds return t[inds]
 end

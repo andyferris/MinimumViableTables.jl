@@ -3,11 +3,11 @@ module MinimumViableTables
 using Base: @pure, @propagate_inbounds, @_propagate_inbounds_meta, @_inline_meta, 
             getproperty
 
-import Base: size, axes, getindex, setindex!, show, similar, copy, filter, map, findall
+import Base: size, axes, getindex, setindex!, show, similar, copy, filter, map, findall, getproperty
 
 using Indexing
 
-export colnames, columns, project, Project, addindex
+export colnames, columns, indexes, project, Project, addindex, getindexes
 
 export AbstractIndex, AbstractUniqueIndex, NoIndex, UniqueIndex, HashIndex, UniqueHashIndex,
        SortIndex, UniqueSortIndex
@@ -29,8 +29,10 @@ end # module
 # Set and bag operations: union, setdiff, intersect, isunique, vcat (from Julia AbstractVector interface)
 # Projections: project, Project{names} (also map)
 # Selections: filter (accelerated when using filter predicates like IsEqual)
-# Renames: TODO rename, Rename{oldnames, newnames} (also map)
-# Cartesian product: todo
+# Renames: rename, Rename{oldnames, newnames} (also map)
+# Cartesian product: todo, probably lazy
+#
+# Add a new column based on existing columns: ?? (also map)
 #
 # The above also relate to joins with (abstract) relations... we can think about this...
 #

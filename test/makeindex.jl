@@ -16,6 +16,6 @@
     @test (UniqueHashIndex{(:c,)}(t)::UniqueHashIndex{(:c,)}).dict == Dict((c = "a",) => 1, (c = "b",) => 2, (c = "c",) => 3)
 
     t2 = addindex(t, SortIndex{(:b,)})
-    @test t2.indexes isa Tuple{SortIndex{(:b,)}}
-    @test t2.indexes[1].order == [3, 1, 2]
+    @test getindexes(t2) isa Tuple{SortIndex{(:b,)}}
+    @test getindexes(t2)[1].order == [3, 1, 2]
 end

@@ -31,6 +31,9 @@ end
 colnames(::Table{names}) where {names} = names
 columns(t::Table{names}) where {names} = NamedTuple{names}(t.data)
 
+getindexes(::AbstractVector{<:NamedTuple}) = ()
+getindexes(t::Table) = Core.getfield(t, :indexes) # Do we want `getproperty(t, name) = columns(t).name`?
+
 @inline size(t::Table) = size(first(t.data))
 @inline axes(t::Table) = axes(first(t.data))
 
@@ -73,7 +76,7 @@ end
 
 function show(io::IO, ::MIME"text/plain", table::Table)
     n = length(table)
-    n_index = length(table.indexes)
+    n_index = length(getindexes(table))
     println(io, "Table with $n $(n == 1 ? "row" : "rows") and $n_index acceleration $(n_index == 1 ? "index" : "indexes")")
     for i = 1:min(n, 5)
         print(io, " ", table[i])
@@ -92,11 +95,11 @@ function similar(t::Table, ::Type{NamedTuple{names, Ts}}, dims::Tuple{Int}) wher
 end
 
 function copy(t::Table{names}) where {names}
-    return Table{names}(copy.(t.data), copy.(t.indexes))
+    return Table{names}(copy.(t.data), copy.(getindexes(t)))
 end
 
 @inline function project(t::Table, names::Tuple{Vararg{Symbol}})
     data = getindices(NamedTuple{colnames(t)}(t.data), names)
-    indexes = project(t.indexes, names)
+    indexes = project(getindexes(t), names)
     return Table{names}(data, indexes)
 end
