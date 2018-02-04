@@ -12,7 +12,7 @@ export colnames, columns, indexes, project, Project, addindex, getindexes
 export AbstractIndex, AbstractUniqueIndex, NoIndex, UniqueIndex, HashIndex, UniqueHashIndex,
        SortIndex, UniqueSortIndex
 
-export Table, IsEqual
+export Table, IsEqual, Equals
 
 include("util.jl")
 include("project.jl")
@@ -20,7 +20,7 @@ include("index.jl")
 include("indices.jl")
 include("table.jl")
 include("makeindex.jl")
-include("filters.jl")
+include("predicates.jl")
 
 end # module
 

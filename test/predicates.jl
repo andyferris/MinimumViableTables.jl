@@ -1,4 +1,4 @@
-@testset "filters" begin
+@testset "predicates" begin
     @testset "IsEqual" begin
         ie = IsEqual{(:a, :b), Tuple{Int, Float64}}((1, 2.0))
         @test IsEqual(a=1, b=2.0) === ie

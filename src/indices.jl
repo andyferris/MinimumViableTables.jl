@@ -9,3 +9,7 @@ _clean() = ()
 function project(t::Tuple{Vararg{AbstractIndex}}, n::Tuple{Vararg{Symbol}})
     return clean(map(Project(n), t))
 end
+
+promote_index(indexes...) = promote_getindexes(indexes)
+promote_getindexes(t::Tuple{Vararg{AbstractIndex}}) = t[1]
+promote_getindexes(t::Tuple{}) = NoIndex()
