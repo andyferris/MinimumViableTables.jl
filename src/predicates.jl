@@ -82,7 +82,7 @@ function _map(pred::IsEqual{names}, t::Table{names}, index::SortIndex{names}) wh
     out = fill(false, length(t))
 
     searchrow = NamedTuple{names}(pred.data)
-    range = searchsorted(t, searchrow)
+    range = searchsorted(t, searchrow) # FIXME
     @inbounds out[range] = true
     
     return out
@@ -93,7 +93,7 @@ function _map(pred::IsEqual{names}, t::Table{names}, index::SortIndex{names2}) w
 
     searchrow = Project{names2}()(NamedTuple{names}(pred.data))
     t_projected = Project{names2}()(t)
-    range = searchsorted(t_projected, searchrow)
+    range = searchsorted(t_projected, searchrow) # FIXME
     @inbounds @simd for i ∈ range
          out[range] = pred(t[i])
     end
@@ -106,7 +106,7 @@ function _map(pred::IsEqual{names}, t::Table{names}, index::UniqueSortIndex{name
     out = fill(false, n)
 
     searchrow = NamedTuple{names}(pred.data)
-    first_greater_or_equal = searchsortedfirst(t, searchrow)
+    first_greater_or_equal = searchsortedfirst(t, searchrow) # FIXME
     if first_greater_or_equal <= n
         @inbounds out[first_greater_or_equal] = pred(t[first_greater_or_equal])
     end
@@ -120,7 +120,7 @@ function _map(pred::IsEqual{names}, t::Table{names}, index::UniqueSortIndex{name
 
     searchrow = Project{names2}()(NamedTuple{names}(pred.data))
     t_projected = Project{names2}()(t)
-    first_greater_or_equal = searchsortedfirst(t_projected, searchrow)
+    first_greater_or_equal = searchsortedfirst(t_projected, searchrow) # FIXME
     if first_greater_or_equal <= n
         @inbounds out[first_greater_or_equal] = pred(t[first_greater_or_equal])
     end
@@ -193,13 +193,13 @@ end
 
 function _findall(pred::IsEqual{names}, t::Table{names}, index::SortIndex{names}) where {names}
     searchrow = NamedTuple{names}(pred.data)
-    return searchsorted(t, searchrow)
+    return searchsorted(t, searchrow) # FIXME
 end
 
 function _findall(pred::IsEqual{names}, t::Table{names}, index::SortIndex{names2}) where {names, names2}
     searchrow = Project(names2)(NamedTuple{names}(pred.data))
     t_projected = Project(names2)(t)
-    range = searchsorted(t_projected, searchrow)
+    range = searchsorted(t_projected, searchrow) # FIXME
     out = Int[]
     @inbounds for i ∈ range
         if pred(t[i])
@@ -213,7 +213,7 @@ end
 function _findall(pred::IsEqual{names}, t::Table{names}, index::UniqueSortIndex{names}) where {names}
     n = length(t)
     searchrow = NamedTuple{names}(pred.data)
-    first_greater_or_equal = searchsortedfirst(t, searchrow)
+    first_greater_or_equal = searchsortedfirst(t, searchrow) # FIXME
     if first_greater_or_equal <= n && pred(t[first_greater_or_equal])
         return Int[first_greater_or_equal]
     else
@@ -225,7 +225,7 @@ function _findall(pred::IsEqual{names}, t::Table{names}, index::UniqueSortIndex{
     n = length(t)
     searchrow = Project(names2)(NamedTuple{names}(pred.data))
     t_projected = Project(names2)(t)
-    first_greater_or_equal = searchsortedfirst(t_projected, searchrow)
+    first_greater_or_equal = searchsortedfirst(t_projected, searchrow) # FIXME
     if first_greater_or_equal <= n && pred(t[first_greater_or_equal])
         return Int[first_greater_or_equal]
     else
@@ -279,7 +279,65 @@ function _filter_indices(pred::IsEqual{names}, t::Table{names}, index::HashIndex
     return _findall(pred, t, index)
 end
 
-# TODO: Other "statisfies some comparison to a constant" like `IsLess`, `IsGreater`, `In`
+"""
+    IsLess(namedtuple)
+    IsLess(name = value, ...)
+
+Creates an `IsLess` function, which returns true on any named tuple whose fields of the
+given name(s) are `isless` to those specified.
+"""
+struct IsLess{names, D <: Tuple} <: Predicate{names}
+    data::D
+end
+IsLess(;kwargs...) = IsLess(kwargs.data)
+IsLess(nt::NamedTuple{names}) where {names} = IsLess{names}(_values(nt))
+IsLess{names}(t::T) where {names, T <: Tuple} = IsLess{names, T}(t)
+
+function (pred::IsLess{names})(x::NamedTuple{names2}) where {names, names2}
+    if names === names2
+        return isless(pred.data, _values(x))
+    else
+        return pred(Project(names)(x))
+    end
+end
+
+# map for IsLess
+
+function _map(pred::IsLess{names}, t::Table{names}, index::SortIndex{names}) where {names}
+    out = fill(false, length(t))
+
+    searchrow = NamedTuple{names}(pred.data)
+    @inbounds range = 1:searchsortedlastless(view(t, index.order), searchrow)
+    @inbounds out[@view index.order[range]] = true
+    
+    return out
+end
+
+# function _map(pred::IsLess{names}, t::Table{names}, index::SortIndex{names2}) where {names, names2}
+#     out = fill(false, length(t))
+
+#     searchrow = Project{names2}()(NamedTuple{names}(pred.data))
+#     t_projected = Project{names2}()(t)
+#     range = searchsorted(t_projected, searchrow) # FIXME
+#     @inbounds @simd for i ∈ range
+#          out[range] = pred(t[i])
+#     end
+    
+#     return out
+# end
+
+function _map(pred::IsLess{names}, t::Table{names}, index::UniqueSortIndex{names}) where {names}
+    out = fill(false, length(t))
+
+    searchrow = NamedTuple{names}(pred.data)
+    @inbounds range = 1:searchsortedlastless(view(t, index.order), searchrow)
+    @inbounds out[@view index.order[range]] = true
+    
+    return out
+end
+
+
+# TODO: Other "statisfies some comparison to a constant" like `IsLessEqual`, `IsGreater`, `In`
 
 """
     Equals(name1, name2)

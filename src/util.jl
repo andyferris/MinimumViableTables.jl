@@ -52,3 +52,34 @@ end
         return tuple($(exprs...))
     end
 end
+
+# index of the last value of vector a that is less than but not equal to x;
+# returns 0 if x is less than all values of v.
+function searchsortedlastless(v::AbstractVector, x, lo::Int = first(keys(v)), hi::Int = last(keys(v)))
+    lo = lo-1
+    hi = hi+1
+    @inbounds while lo < hi-1
+        m = (lo+hi)>>>1
+        y = v[m]
+        if isless(y, x)
+            lo = m
+        else
+            hi = m
+        end
+    end
+    return lo
+end
+
+function searchsortedfirstgreater(v::AbstractVector, x, lo::Int = first(keys(v)), hi::Int = last(keys(v)))
+    lo = lo-1
+    hi = hi+1
+    @inbounds while lo < hi-1
+        m = (lo+hi)>>>1
+        if isless(x, v[m])
+            hi = m
+        else
+            lo = m
+        end
+    end
+    return hi
+end

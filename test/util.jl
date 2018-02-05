@@ -60,4 +60,33 @@
         @test @inferred(_values((a=1,))) === (1,)
         @test @inferred(_values((a=1, b=2.0))) === (1, 2.0)
     end
+
+    @testset "searchsorted" begin
+        # Test both even and odd length vectors to ensure bitshift logic works in all cases
+        @test searchsortedlastless([1,2,3], 0) === 0
+        @test searchsortedlastless([1,2,3], 1) === 0
+        @test searchsortedlastless([1,2,3], 2) === 1
+        @test searchsortedlastless([1,2,3], 3) === 2
+        @test searchsortedlastless([1,2,3], 4) === 3
+
+        @test searchsortedlastless([1,2,3,4], 0) === 0
+        @test searchsortedlastless([1,2,3,4], 1) === 0
+        @test searchsortedlastless([1,2,3,4], 2) === 1
+        @test searchsortedlastless([1,2,3,4], 3) === 2
+        @test searchsortedlastless([1,2,3,4], 4) === 3
+        @test searchsortedlastless([1,2,3,4], 5) === 4
+
+        @test searchsortedfirstgreater([1,2,3], 0) === 1
+        @test searchsortedfirstgreater([1,2,3], 1) === 2
+        @test searchsortedfirstgreater([1,2,3], 2) === 3
+        @test searchsortedfirstgreater([1,2,3], 3) === 4
+        @test searchsortedfirstgreater([1,2,3], 4) === 4
+
+        @test searchsortedfirstgreater([1,2,3,4], 0) === 1
+        @test searchsortedfirstgreater([1,2,3,4], 1) === 2
+        @test searchsortedfirstgreater([1,2,3,4], 2) === 3
+        @test searchsortedfirstgreater([1,2,3,4], 3) === 4
+        @test searchsortedfirstgreater([1,2,3,4], 4) === 5
+        @test searchsortedfirstgreater([1,2,3,4], 5) === 5
+    end
 end
