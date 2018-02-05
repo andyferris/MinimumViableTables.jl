@@ -311,7 +311,7 @@ function _map(pred::IsLess{names}, t::Table{names}, index::SortIndex{names}) whe
 
     searchrow = NamedTuple{names}(pred.data)
     @inbounds range = 1:searchsortedlastless(view(t, index.order), searchrow)
-    @inbounds out[@view index.order[range]] = true
+    @inbounds out[view(index.order, range)] = true
     
     return out
 end
@@ -334,13 +334,15 @@ function _map(pred::IsLess{names}, t::Table{names}, index::UniqueSortIndex{names
 
     searchrow = NamedTuple{names}(pred.data)
     @inbounds range = 1:searchsortedlastless(view(t, index.order), searchrow)
-    @inbounds out[@view index.order[range]] = true
+    @inbounds out[view(index.order, range)] = true
     
     return out
 end
 
 
-# TODO: Other "statisfies some comparison to a constant" like `IsLessEqual`, `IsGreater`, `In`
+# TODO: Other "statisfies some comparison to a constant" predicates:
+#       `IsLessEqual`, `IsGreater`, `IsGreaterEqual`, `NotEqual` and `In`
+#       (particularly `In` an `IntervalSet` or a `UnitRange` will benefit from sorted acceleration)
 
 """
     Equals(name1, name2)
@@ -413,4 +415,14 @@ function _map(pred::Equals{names}, t::Table{names}, index::SortIndex{names2}) wh
 end
 
 
-# TODO: Other comparison-based relations like `LessThan{:a, :b}` (values in column `a` are less than column `b`)
+# TODO: Other comparison-based relations like 
+#  *`LessThan{:a, :b}` (values in column `a` are less than column `b`)
+#  * LessEqualThan
+#  * GreaterThan
+#  * LessGreaterThan
+#  * Within (windowing)
+
+# TODO: Some way of dealing with multiple indexes. E.g. two sort indexes and sort-merge join.
+
+# TODO: Implement Cartesian outer product between tables, then faster filters with above
+#       indexes, to make efficient Join operations
