@@ -82,8 +82,8 @@ function _map(pred::IsEqual{names}, t::Table{names}, index::SortIndex{names}) wh
     out = fill(false, length(t))
 
     searchrow = NamedTuple{names}(pred.data)
-    range = searchsorted(t, searchrow) # FIXME
-    @inbounds out[range] = true
+    @inbounds range = searchsorted(view(t, index.order), searchrow)
+    @inbounds out[index.order[range]] = true
     
     return out
 end
@@ -93,10 +93,8 @@ function _map(pred::IsEqual{names}, t::Table{names}, index::SortIndex{names2}) w
 
     searchrow = Project{names2}()(NamedTuple{names}(pred.data))
     t_projected = Project{names2}()(t)
-    range = searchsorted(t_projected, searchrow) # FIXME
-    @inbounds @simd for i ∈ range
-         out[range] = pred(t[i])
-    end
+    @inbounds range = searchsorted(view(t_projected, index.order), searchrow)
+    @inbounds out[index.order[range]] = true
     
     return out
 end
@@ -106,9 +104,9 @@ function _map(pred::IsEqual{names}, t::Table{names}, index::UniqueSortIndex{name
     out = fill(false, n)
 
     searchrow = NamedTuple{names}(pred.data)
-    first_greater_or_equal = searchsortedfirst(t, searchrow) # FIXME
+    @inbounds first_greater_or_equal = searchsortedfirst(view(t, index.order), searchrow)
     if first_greater_or_equal <= n
-        @inbounds out[first_greater_or_equal] = pred(t[first_greater_or_equal])
+        @inbounds out[index.order[first_greater_or_equal]] = pred(t[index.order[first_greater_or_equal]])
     end
     
     return out
@@ -120,9 +118,9 @@ function _map(pred::IsEqual{names}, t::Table{names}, index::UniqueSortIndex{name
 
     searchrow = Project{names2}()(NamedTuple{names}(pred.data))
     t_projected = Project{names2}()(t)
-    first_greater_or_equal = searchsortedfirst(t_projected, searchrow) # FIXME
+    @inbounds first_greater_or_equal = searchsortedfirst(view(t_projected, index.order), searchrow)
     if first_greater_or_equal <= n
-        @inbounds out[first_greater_or_equal] = pred(t[first_greater_or_equal])
+        @inbounds out[index.order[first_greater_or_equal]] = pred(t[index.order[first_greater_or_equal]])
     end
     
     return out
@@ -193,17 +191,18 @@ end
 
 function _findall(pred::IsEqual{names}, t::Table{names}, index::SortIndex{names}) where {names}
     searchrow = NamedTuple{names}(pred.data)
-    return searchsorted(t, searchrow) # FIXME
+    return @inbounds index.order[searchsorted(view(t, index.order), searchrow)]
 end
 
 function _findall(pred::IsEqual{names}, t::Table{names}, index::SortIndex{names2}) where {names, names2}
     searchrow = Project(names2)(NamedTuple{names}(pred.data))
     t_projected = Project(names2)(t)
-    range = searchsorted(t_projected, searchrow) # FIXME
+    @inbounds range = searchsorted(view(t_projected, index.order), searchrow)
     out = Int[]
     @inbounds for i ∈ range
-        if pred(t[i])
-            push!(out, i)
+        j = index.order[i]
+        if pred(t[j])
+            push!(out, j)
         end
     end
 
@@ -213,24 +212,28 @@ end
 function _findall(pred::IsEqual{names}, t::Table{names}, index::UniqueSortIndex{names}) where {names}
     n = length(t)
     searchrow = NamedTuple{names}(pred.data)
-    first_greater_or_equal = searchsortedfirst(t, searchrow) # FIXME
-    if first_greater_or_equal <= n && pred(t[first_greater_or_equal])
-        return Int[first_greater_or_equal]
-    else
-        return Int[]
+    @inbounds first_greater_or_equal = searchsortedfirst(view(t, index.order), searchrow)
+    @inbounds if first_greater_or_equal <= n
+        i = index.order[first_greater_or_equal]
+        if pred(t[i])
+            return Int[i]
+        end
     end
+    return Int[]
 end
 
 function _findall(pred::IsEqual{names}, t::Table{names}, index::UniqueSortIndex{names2}) where {names, names2}
     n = length(t)
     searchrow = Project(names2)(NamedTuple{names}(pred.data))
     t_projected = Project(names2)(t)
-    first_greater_or_equal = searchsortedfirst(t_projected, searchrow) # FIXME
-    if first_greater_or_equal <= n && pred(t[first_greater_or_equal])
-        return Int[first_greater_or_equal]
-    else
-        return Int[]
+    @inbounds first_greater_or_equal = searchsortedfirst(view(t_projected, index.order), searchrow)
+    @inbounds if first_greater_or_equal <= n 
+        i = index.order[first_greater_or_equal]
+        if pred(t[i])
+            return Int[i]
+        end
     end
+    return Int[]
 end
 
 function _findall(pred::IsEqual{names}, t::Table{names}, index::HashIndex{names}) where {names}
