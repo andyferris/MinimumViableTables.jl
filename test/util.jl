@@ -89,4 +89,14 @@
         @test searchsortedfirstgreater([1,2,3,4], 4) === 5
         @test searchsortedfirstgreater([1,2,3,4], 5) === 5
     end
+
+    @testset "_all" begin
+        @test _all(&, (), ())
+        @test _all(&, (true,), (true,))
+        @test !_all(&, (false,), (true,))
+        @test !_all(&, (true,), (false,))
+        @test !_all(&, (false,), (false,))
+        @test _all(&, (true, true), (true, true))
+        @test !_all(&, (true, true, false), (true, true, true))
+    end
 end

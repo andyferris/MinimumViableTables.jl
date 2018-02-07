@@ -83,3 +83,13 @@ function searchsortedfirstgreater(v::AbstractVector, x, lo::Int = first(keys(v))
     end
     return hi
 end
+
+_all(f, ::Tuple{}, ::Tuple{}) = true
+@generated function _all(f, t1::NTuple{n, Any}, t2::NTuple{n, Any}) where {n}
+    exprs = [:(f(t1[$i], t2[$i])) for i = 1:n]
+    out = reduce((final, expr) -> :($final && $expr), exprs) # short-circuiting...
+    return quote
+        @_inline_meta
+        return $out
+    end
+end

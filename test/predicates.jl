@@ -328,4 +328,60 @@
         @test findall(pred, t4ba) == [1, 2]
         @test filter(pred, t4ba) == Table(a = [2, 3], b = [4.0, 6.0])
     end
+
+    @testset "In (Interval)" begin
+        pred = In{(:a,), Tuple{Interval{Int}}}((2..3,))
+        @test In(a=2..3) === pred
+
+        @test pred((a=1, b=2.0)) === false
+        @test pred((a=2, b=4.0)) === true
+        @test pred((a=3, b=6.0)) === true
+        @test pred((b=2.0, a=1)) === false
+        @test pred((b=4.0, a=2)) === true
+        @test pred((a=2, b=4.0, c=false)) === true
+        @test pred((a=3, b=2.0, c=false)) === true
+        @test_throws Exception pred((b=1.0))
+
+        va = [2,   3,   1]
+        vb = [4.0, 6.0, 2.0]
+        t = Table{(:a, :b), NamedTuple{(:a,:b), Tuple{Int, Float64}}, Tuple{Vector{Int}, Vector{Float64}}, Tuple{}}((va, vb), ())
+
+        @test map(pred, t) == [true, true, false]
+        @test findall(pred, t) == [1, 2]
+        @test filter(pred, t) == Table(a = [2, 3], b = [4.0, 6.0])
+
+        t3a = addindex(t, SortIndex{(:a,)})
+        @test map(pred, t3a) == [true, true, false]
+        @test findall(pred, t3a) == [1, 2]
+        @test filter(pred, t3a) == Table(a = [2, 3], b = [4.0, 6.0])
+        t3b = addindex(t, SortIndex{(:b,)})
+        @test map(pred, t3b) == [true, true, false]
+        @test findall(pred, t3b) == [1, 2]
+        @test filter(pred, t3b) == Table(a = [2, 3], b = [4.0, 6.0])
+        t3ab = addindex(t, SortIndex{(:a,:b)})
+        @test map(pred, t3ab) == [true, true, false]
+        @test findall(pred, t3ab) == [1, 2]
+        @test filter(pred, t3ab) == Table(a = [2, 3], b = [4.0, 6.0])
+        t3ba = addindex(t, SortIndex{(:b,:a)})
+        @test map(pred, t3ba) == [true, true, false]
+        @test findall(pred, t3ba) == [1, 2]
+        @test filter(pred, t3ba) == Table(a = [2, 3], b = [4.0, 6.0])
+        
+        t4a = addindex(t, UniqueSortIndex{(:a,)})
+        @test map(pred, t4a) == [true, true, false]
+        @test findall(pred, t4a) == [1, 2]
+        @test filter(pred, t4a) == Table(a = [2, 3], b = [4.0, 6.0])
+        t4b = addindex(t, UniqueSortIndex{(:b,)})
+        @test map(pred, t4b) == [true, true, false]
+        @test findall(pred, t4b) == [1, 2]
+        @test filter(pred, t4b) == Table(a = [2, 3], b = [4.0, 6.0])
+        t4ab = addindex(t, UniqueSortIndex{(:a,:b)})
+        @test map(pred, t4ab) == [true, true, false]
+        @test findall(pred, t4ab) == [1, 2]
+        @test filter(pred, t4ab) == Table(a = [2, 3], b = [4.0, 6.0])
+        t4ba = addindex(t, UniqueSortIndex{(:b,:a)})
+        @test map(pred, t4ba) == [true, true, false]
+        @test findall(pred, t4ba) == [1, 2]
+        @test filter(pred, t4ba) == Table(a = [2, 3], b = [4.0, 6.0])
+    end
 end

@@ -3,7 +3,8 @@ module MinimumViableTables
 using Base: @pure, @propagate_inbounds, @_propagate_inbounds_meta, @_inline_meta, 
             getproperty
 
-import Base: size, axes, getindex, setindex!, show, similar, copy, filter, map, findall, getproperty
+import Base: size, axes, getindex, setindex!, show, similar, copy, filter, map, findall,
+             getproperty, in
 
 using Indexing
 
@@ -12,7 +13,9 @@ export colnames, columns, indexes, project, Project, addindex, getindexes
 export AbstractIndex, AbstractUniqueIndex, NoIndex, UniqueIndex, HashIndex, UniqueHashIndex,
        SortIndex, UniqueSortIndex
 
-export Table, IsEqual, IsLess, IsLessEqual, IsGreater, IsGreaterEqual, Equals
+export Table, IsEqual, IsLess, IsLessEqual, IsGreater, IsGreaterEqual, In, Equals
+
+include("interval.jl")
 
 include("util.jl")
 include("project.jl")
@@ -30,7 +33,7 @@ end # module
 # Projections: project, Project{names} (also map)
 # Selections: filter (accelerated when using filter predicates like IsEqual)
 # Renames: rename, Rename{oldnames, newnames} (also map)
-# Cartesian product: todo, probably lazy
+# Cartesian product: todo, probably lazy, possibly a matrix of named tuples?
 #
 # Add a new column based on existing columns: ?? (also map)
 #

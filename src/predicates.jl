@@ -1,7 +1,7 @@
 # Predicates on rows which can hopefully take advantage of acceleration indexes
 
 abstract type Predicate{names} <: Function; end # Intention to add `!`, `&`, `|` on `Predicate`s.
-# TODO: logical not, and, or, etc for predicates
+# TODO: logical not, and, or, etc for predicates?
 
 # Predicates are useful for filtering, etc:
 
@@ -364,7 +364,7 @@ function _map(pred::IsLess{names}, t::Table{names}, index::UniqueSortIndex{names
     searchrow = Project{names2}()(NamedTuple{names}(pred.data))
     t_projected = Project{names2}()(t)
     @inbounds i = searchsortedfirst(view(t_projected, index.order), searchrow)
-    @inbounds if i <= n && !pred(t[index.order[i]]) # TODO: Make faster by comparing only columns setdiff(names, names2)
+    @inbounds if i > n || !pred(t[index.order[i]]) # TODO: Make faster by comparing only columns setdiff(names, names2)
         i = i - 1
     end
     @inbounds out[index.order[1:i]] = true
@@ -425,7 +425,7 @@ function _findall(pred::IsLess{names}, t::Table{names}, index::UniqueSortIndex{n
     searchrow = Project{names2}()(NamedTuple{names}(pred.data))
     t_projected = Project{names2}()(t)
     @inbounds i = searchsortedfirst(view(t_projected, index.order), searchrow)
-    @inbounds if i <= n && !pred(t[index.order[i]]) # TODO: Make faster by comparing only columns setdiff(names, names2)
+    @inbounds if i > n || !pred(t[index.order[i]]) # TODO: Make faster by comparing only columns setdiff(names, names2)
         i = i - 1
     end
     @inbounds return sort(view(index.order, 1:i))
@@ -515,7 +515,7 @@ function _map(pred::IsLessEqual{names}, t::Table{names}, index::UniqueSortIndex{
     searchrow = Project{names2}()(NamedTuple{names}(pred.data))
     t_projected = Project{names2}()(t)
     @inbounds i = searchsortedfirst(view(t_projected, index.order), searchrow)
-    @inbounds if i <= n && !pred(t[index.order[i]]) # TODO: Make faster by comparing only columns setdiff(names, names2)
+    @inbounds if i > n || !pred(t[index.order[i]]) # TODO: Make faster by comparing only columns setdiff(names, names2)
         i = i - 1
     end
     @inbounds out[index.order[1:i]] = true
@@ -576,7 +576,7 @@ function _findall(pred::IsLessEqual{names}, t::Table{names}, index::UniqueSortIn
     searchrow = Project{names2}()(NamedTuple{names}(pred.data))
     t_projected = Project{names2}()(t)
     @inbounds i = searchsortedfirst(view(t_projected, index.order), searchrow)
-    @inbounds if i <= n && !pred(t[index.order[i]]) # TODO: Make faster by comparing only columns setdiff(names, names2)
+    @inbounds if i > n || !pred(t[index.order[i]]) # TODO: Make faster by comparing only columns setdiff(names, names2)
         i = i - 1
     end
     @inbounds return sort(view(index.order, 1:i))
@@ -604,9 +604,133 @@ function (pred::IsGreater{names})(x::NamedTuple{names2}) where {names, names2}
     end
 end
 
-# TODO map for IsGreater
+# map for IsGreater
 
-# TODO findall for IsGreater
+function _map(pred::IsGreater{names}, t::Table{names}, index::SortIndex{names}) where {names}
+    out = fill(false, length(t))
+
+    searchrow = NamedTuple{names}(pred.data)
+    @inbounds range = searchsortedfirstgreater(view(t, index.order), searchrow):length(t)
+    @inbounds out[view(index.order, range)] = true
+    
+    return out
+end
+
+function _map(pred::IsGreater{names}, t::Table{names}, index::SortIndex{names2}) where {names, names2}
+    # Be careful about what index you accept - TODO perhaps `promote_index` needs to know the predicate rather than do this here
+    names3 = _headsubset(names, names2)
+    if names3 === ()
+        return _map(pred, t, NoIndex())
+    elseif names3 !== names2
+        return _map(pred, t, SortIndex{names3}(index.order))
+    end
+
+    out = fill(false, length(t))
+
+    searchrow = Project{names2}()(NamedTuple{names}(pred.data))
+    t_projected = Project{names2}()(t)
+    @inbounds range = searchsorted(view(t_projected, index.order), searchrow)
+    @inbounds for i ∈ range
+        j = index.order[i]
+        out[j] = pred(t[j]) # TODO: Make faster by comparing only columns setdiff(names, names2)
+    end
+    @inbounds out[index.order[range.stop+1:length(t)]] = true
+  
+    return out
+end
+
+function _map(pred::IsGreater{names}, t::Table{names}, index::UniqueSortIndex{names}) where {names}
+    out = fill(false, length(t))
+
+    searchrow = NamedTuple{names}(pred.data)
+    @inbounds range = searchsortedfirstgreater(view(t, index.order), searchrow):length(t)
+    @inbounds out[view(index.order, range)] = true
+    
+    return out
+end
+
+function _map(pred::IsGreater{names}, t::Table{names}, index::UniqueSortIndex{names2}) where {names, names2}
+    # Be careful about what index you accept - TODO perhaps `promote_index` needs to know the predicate rather than do this here
+    names3 = _headsubset(names, names2)
+    if names3 === ()
+        return _map(pred, t, NoIndex())
+    elseif names3 !== names2
+        return _map(pred, t, SortIndex{names3}(index.order)) # potentially looses uniqueness
+    end
+
+    n = length(t)
+    out = fill(false, length(t))
+
+    searchrow = Project{names2}()(NamedTuple{names}(pred.data))
+    t_projected = Project{names2}()(t)
+    @inbounds i = searchsortedlast(view(t_projected, index.order), searchrow)
+    @inbounds if i == 0 || !pred(t[index.order[i]]) # TODO: Make faster by comparing only columns setdiff(names, names2)
+        i = i + 1
+    end
+    @inbounds out[index.order[i:n]] = true
+
+    return out
+end
+
+# findall for IsGreater
+
+function _findall(pred::IsGreater{names}, t::Table{names}, index::SortIndex{names}) where {names}
+    searchrow = NamedTuple{names}(pred.data)
+    @inbounds range = searchsortedfirstgreater(view(t, index.order), searchrow):length(t)
+    
+    @inbounds return sort(view(index.order, range))
+end
+
+function _findall(pred::IsGreater{names}, t::Table{names}, index::SortIndex{names2}) where {names, names2}
+    # Be careful about what index you accept - TODO perhaps `promote_index` needs to know the predicate rather than do this here
+    names3 = _headsubset(names, names2)
+    if names3 === ()
+        return _findall(pred, t, NoIndex())
+    elseif names3 !== names2
+        return _findall(pred, t, SortIndex{names3}(index.order))
+    end
+
+    searchrow = Project{names2}()(NamedTuple{names}(pred.data))
+    t_projected = Project{names2}()(t)
+    @inbounds range = searchsorted(view(t_projected, index.order), searchrow)
+    out = Int[]
+    @inbounds for i ∈ range
+        j = index.order[i]
+        if pred(t[j]) # TODO: Make faster by comparing only columns setdiff(names, names2)
+            push!(out, j)
+        end
+    end
+    @inbounds append!(out, index.order[range.stop+1:length(t)])
+
+    sort!(out)
+    return out
+end
+
+function _findall(pred::IsGreater{names}, t::Table{names}, index::UniqueSortIndex{names}) where {names}
+    searchrow = NamedTuple{names}(pred.data)
+    @inbounds range = searchsortedfirstgreater(view(t, index.order), searchrow):length(t)
+    @inbounds return sort(view(index.order, range))
+end
+
+function _findall(pred::IsGreater{names}, t::Table{names}, index::UniqueSortIndex{names2}) where {names, names2}
+    # Be careful about what index you accept - TODO perhaps `promote_index` needs to know the predicate rather than do this here
+    names3 = _headsubset(names, names2)
+    if names3 === ()
+        return _findall(pred, t, NoIndex())
+    elseif names3 !== names2
+        return _findall(pred, t, SortIndex{names3}(index.order)) # potentially looses uniqueness
+    end
+
+    n = length(t)
+
+    searchrow = Project{names2}()(NamedTuple{names}(pred.data))
+    t_projected = Project{names2}()(t)
+    @inbounds i = searchsortedlast(view(t_projected, index.order), searchrow)
+    @inbounds if i == 0 || !pred(t[index.order[i]]) # TODO: Make faster by comparing only columns setdiff(names, names2)
+        i = i + 1
+    end
+    @inbounds return sort(view(index.order, i:n))
+end
 
 """
     IsGreaterEqual(namedtuple)
@@ -630,14 +754,227 @@ function (pred::IsGreaterEqual{names})(x::NamedTuple{names2}) where {names, name
     end
 end
 
-# TODO map for IsGreaterEqual
+# map for IsGreaterEqual
 
-# TODO findall for IsGreaterEqual
+function _map(pred::IsGreaterEqual{names}, t::Table{names}, index::SortIndex{names}) where {names}
+    out = fill(false, length(t))
 
-# TODO: Other "statisfies some comparison to a constant" predicates:
-#       `NotEqual` and `In`
-#       (particularly `In` an `IntervalSet` or a `UnitRange` will benefit from sorted acceleration)
+    searchrow = NamedTuple{names}(pred.data)
+    @inbounds range = searchsortedfirst(view(t, index.order), searchrow):length(t)
+    @inbounds out[view(index.order, range)] = true
+    
+    return out
+end
 
+function _map(pred::IsGreaterEqual{names}, t::Table{names}, index::SortIndex{names2}) where {names, names2}
+    # Be careful about what index you accept - TODO perhaps `promote_index` needs to know the predicate rather than do this here
+    names3 = _headsubset(names, names2)
+    if names3 === ()
+        return _map(pred, t, NoIndex())
+    elseif names3 !== names2
+        return _map(pred, t, SortIndex{names3}(index.order))
+    end
+
+    out = fill(false, length(t))
+
+    searchrow = Project{names2}()(NamedTuple{names}(pred.data))
+    t_projected = Project{names2}()(t)
+    @inbounds range = searchsorted(view(t_projected, index.order), searchrow)
+    @inbounds for i ∈ range
+        j = index.order[i]
+        out[j] = pred(t[j]) # TODO: Make faster by comparing only columns setdiff(names, names2)
+    end
+    @inbounds out[index.order[range.stop+1:length(t)]] = true
+  
+    return out
+end
+
+function _map(pred::IsGreaterEqual{names}, t::Table{names}, index::UniqueSortIndex{names}) where {names}
+    out = fill(false, length(t))
+
+    searchrow = NamedTuple{names}(pred.data)
+    @inbounds range = searchsortedfirst(view(t, index.order), searchrow):length(t)
+    @inbounds out[view(index.order, range)] = true
+    
+    return out
+end
+
+function _map(pred::IsGreaterEqual{names}, t::Table{names}, index::UniqueSortIndex{names2}) where {names, names2}
+    # Be careful about what index you accept - TODO perhaps `promote_index` needs to know the predicate rather than do this here
+    names3 = _headsubset(names, names2)
+    if names3 === ()
+        return _map(pred, t, NoIndex())
+    elseif names3 !== names2
+        return _map(pred, t, SortIndex{names3}(index.order)) # potentially looses uniqueness
+    end
+
+    n = length(t)
+    out = fill(false, length(t))
+
+    searchrow = Project{names2}()(NamedTuple{names}(pred.data))
+    t_projected = Project{names2}()(t)
+    @inbounds i = searchsortedlast(view(t_projected, index.order), searchrow)
+    @inbounds if i == 0 || !pred(t[index.order[i]]) # TODO: Make faster by comparing only columns setdiff(names, names2)
+        i = i + 1
+    end
+    @inbounds out[index.order[i:n]] = true
+
+    return out
+end
+
+# findall for IsGreaterEqual
+
+function _findall(pred::IsGreaterEqual{names}, t::Table{names}, index::SortIndex{names}) where {names}
+    searchrow = NamedTuple{names}(pred.data)
+    @inbounds range = searchsortedfirst(view(t, index.order), searchrow):length(t)
+    
+    @inbounds return sort(view(index.order, range))
+end
+
+function _findall(pred::IsGreaterEqual{names}, t::Table{names}, index::SortIndex{names2}) where {names, names2}
+    # Be careful about what index you accept - TODO perhaps `promote_index` needs to know the predicate rather than do this here
+    names3 = _headsubset(names, names2)
+    if names3 === ()
+        return _findall(pred, t, NoIndex())
+    elseif names3 !== names2
+        return _findall(pred, t, SortIndex{names3}(index.order))
+    end
+
+    searchrow = Project{names2}()(NamedTuple{names}(pred.data))
+    t_projected = Project{names2}()(t)
+    @inbounds range = searchsorted(view(t_projected, index.order), searchrow)
+    out = Int[]
+    @inbounds for i ∈ range
+        j = index.order[i]
+        if pred(t[j]) # TODO: Make faster by comparing only columns setdiff(names, names2)
+            push!(out, j)
+        end
+    end
+    @inbounds append!(out, index.order[range.stop+1:length(t)])
+
+    sort!(out)
+    return out
+end
+
+function _findall(pred::IsGreaterEqual{names}, t::Table{names}, index::UniqueSortIndex{names}) where {names}
+    searchrow = NamedTuple{names}(pred.data)
+    @inbounds range = searchsortedfirst(view(t, index.order), searchrow):length(t)
+    @inbounds return sort(view(index.order, range))
+end
+
+function _findall(pred::IsGreaterEqual{names}, t::Table{names}, index::UniqueSortIndex{names2}) where {names, names2}
+    # Be careful about what index you accept - TODO perhaps `promote_index` needs to know the predicate rather than do this here
+    names3 = _headsubset(names, names2)
+    if names3 === ()
+        return _findall(pred, t, NoIndex())
+    elseif names3 !== names2
+        return _findall(pred, t, SortIndex{names3}(index.order)) # potentially looses uniqueness
+    end
+
+    n = length(t)
+
+    searchrow = Project{names2}()(NamedTuple{names}(pred.data))
+    t_projected = Project{names2}()(t)
+    @inbounds i = searchsortedlast(view(t_projected, index.order), searchrow)
+    @inbounds if i == 0 || !pred(t[index.order[i]]) # TODO: Make faster by comparing only columns setdiff(names, names2)
+        i = i + 1
+    end
+    @inbounds return sort(view(index.order, i:n))
+end
+
+"""
+    In(namedtuple)
+    In(name = collection, ...)
+
+Creates an `In` function, which returns true on any named tuple whose field(s) of the
+given name(s) is `in` the collection(s) specified.
+"""
+struct In{names, T <: Tuple} <: Predicate{names}
+    data::T
+end
+In(;kwargs...) = In(kwargs.data)
+In(nt::NamedTuple{names}) where {names} = In{names}(_values(nt))
+In{names}(t::T) where {names, T <: Tuple} = In{names, T}(t)
+
+function (pred::In{names})(x::NamedTuple{names2}) where {names, names2}
+    if names === names2
+        return _all(in, _values(x), pred.data)
+    else
+        return pred(Project(names)(x))
+    end
+end
+
+# map for `In` of `Interval`
+
+function _map(pred::In{names, Tuple{<:Interval}}, t::Table{names}, index::SortIndex{names}) where {names}
+    # TODO Currently expects a single column here - generalize
+    # TODO The generalized solution could use a generalized search tree like k-d tree
+    out = fill(false, length(t))
+
+    startrow = NamedTuple{names}(pred.data[1].start)
+    @inbounds start = searchsortedfirst(view(t, index.order), startrow)
+
+    stoprow = NamedTuple{names}(pred.data[1].start)
+    @inbounds stop = searchsortedlast(view(t, index.order), stoprow)
+
+    @inbounds out[view(index.order, start:stop)] = true
+    
+    return out
+end
+
+function _map(pred::In{names, Tuple{<:Interval}}, t::Table{names}, index::UniqueSortIndex{names}) where {names}
+    # TODO Currently expects a single column here - generalize
+    # TODO The generalized solution could use a generalized search tree like k-d tree
+    out = fill(false, length(t))
+
+    startrow = NamedTuple{names}(pred.data[1].start)
+    @inbounds start = searchsortedfirst(view(t, index.order), startrow)
+
+    stoprow = NamedTuple{names}(pred.data[1].start)
+    @inbounds stop = searchsortedlast(view(t, index.order), stoprow)
+
+    @inbounds out[view(index.order, start:stop)] = true
+    
+    return out
+end
+
+# findall for `In` of `Interval`
+
+function _findall(pred::In{names, Tuple{<:Interval}}, t::Table{names}, index::SortIndex{names}) where {names}
+    # TODO Currently expects a single column here - generalize
+    # TODO The generalized solution could use a generalized search tree like k-d tree
+    startrow = NamedTuple{names}(pred.data[1].start)
+    @inbounds start = searchsortedfirst(view(t, index.order), startrow)
+
+    stoprow = NamedTuple{names}(pred.data[1].start)
+    @inbounds stop = searchsortedlast(view(t, index.order), stoprow)
+
+    @inbounds return index.order[start:stop]
+end
+
+function _findall(pred::In{names, Tuple{<:Interval}}, t::Table{names}, index::UniqueSortIndex{names}) where {names}
+    # TODO Currently expects a single column here - generalize
+    # TODO The generalized solution could use a generalized search tree like k-d tree
+    startrow = NamedTuple{names}(pred.data[1].start)
+    @inbounds start = searchsortedfirst(view(t, index.order), startrow)
+
+    stoprow = NamedTuple{names}(pred.data[1].start)
+    @inbounds stop = searchsortedlast(view(t, index.order), stoprow)
+
+    @inbounds return index.order[start:stop]
+end
+
+# filter for `In` of `Interval`
+
+function _filter_indices(pred::IsEqual{names, Tuple{<:Interval}}, t::Table{names}, index::SortIndex{names}) where {names}
+    return _findall(pred, t, index)
+end
+
+function _filter_indices(pred::IsEqual{names, Tuple{<:Interval}}, t::Table{names}, index::UniqueSortIndex{names}) where {names}
+    return _findall(pred, t, index)
+end
+
+# TODO: `NotEqual` and `NotIn` ?? Or introduce `Not{<:Predicate} <: Predicate`?
 
 """
     Equals(name1, name2)
