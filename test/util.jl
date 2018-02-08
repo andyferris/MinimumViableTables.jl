@@ -99,4 +99,9 @@
         @test _all(&, (true, true), (true, true))
         @test !_all(&, (true, true, false), (true, true, true))
     end
+
+    @testset "_valuetype" begin
+        _valuetype(NamedTuple{(:a,), Tuple{Int}}) == Tuple{Int}
+        _valuetype((a=1,)) == Tuple{Int}
+    end
 end

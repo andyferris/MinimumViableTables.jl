@@ -8,7 +8,7 @@ import Base: size, axes, getindex, setindex!, show, similar, copy, filter, map, 
 
 using Indexing
 
-export colnames, columns, indexes, project, Project, addindex, getindexes
+export colnames, columns, indexes, project, Project, addindex, getindexes, rename, Rename
 
 export AbstractIndex, AbstractUniqueIndex, NoIndex, UniqueIndex, HashIndex, UniqueHashIndex,
        SortIndex, UniqueSortIndex
@@ -19,6 +19,7 @@ include("interval.jl")
 
 include("util.jl")
 include("project.jl")
+include("rename.jl")
 include("index.jl")
 include("indices.jl")
 include("table.jl")

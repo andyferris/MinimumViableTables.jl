@@ -93,3 +93,6 @@ _all(f, ::Tuple{}, ::Tuple{}) = true
         return $out
     end
 end
+
+_valuetype(::Type{NamedTuple{names, T}}) where {names, T} = T
+_valuetype(::NamedTuple{names, T}) where {names, T} = T

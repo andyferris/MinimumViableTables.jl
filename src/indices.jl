@@ -13,3 +13,7 @@ end
 promote_index(indexes...) = promote_getindexes(indexes)
 promote_getindexes(t::Tuple{Vararg{AbstractIndex}}) = t[1]
 promote_getindexes(t::Tuple{}) = NoIndex()
+
+@inline function (r::Rename{oldnames, newnames})(indexes::Tuple{Vararg{AbstractIndex}}) where {oldnames, newnames}
+    map(r, indexes)
+end
