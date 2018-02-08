@@ -96,3 +96,7 @@ end
 
 _valuetype(::Type{NamedTuple{names, T}}) where {names, T} = T
 _valuetype(::NamedTuple{names, T}) where {names, T} = T
+
+@generated function _cat_types(::Type{T1}, ::Type{T2}) where {T1 <: Tuple, T2 <: Tuple}
+    return Tuple{T1.parameters..., T2.parameters...}
+end

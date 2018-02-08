@@ -101,7 +101,10 @@
     end
 
     @testset "_valuetype" begin
-        _valuetype(NamedTuple{(:a,), Tuple{Int}}) == Tuple{Int}
-        _valuetype((a=1,)) == Tuple{Int}
+        @test @inferred(_valuetype(NamedTuple{(:a,), Tuple{Int}})) == Tuple{Int}
+        @test @inferred(_valuetype((a=1,))) == Tuple{Int}
     end
+
+    @testset "_cat_types" begin
+        @test @inferred(_cat_types(Tuple{Int, String}, Tuple{Float64, Nothing})) == Tuple{Int, String, Float64, Nothing}
 end

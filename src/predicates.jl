@@ -1046,19 +1046,11 @@ function _map(pred::Equals{names}, t::Table{names}, index::SortIndex{names2}) wh
     return _map(pred, t, NoIndex())
 end
 
-
-# TODO: Other comparison-based relations like 
-#  *`LessThan{:a, :b}` (values in column `a` are less than column `b`)
-#  * LessEqualThan
-#  * GreaterThan
-#  * LessGreaterThan
-#  * Within (windowing)
+# TODO: Perhaps instead of Equals, etc, we can have some kind of theta-join-generator.
+#       Given the values in column :a, make sure IsEqual(b = value in :a)
+#       This could then simply be lambda, we can construct a custom `In` for example.
 
 # TODO: Some way of dealing with multiple indexes. E.g. two sort indexes and sort-merge join.
 
 # TODO: Implement Cartesian outer product between tables, then faster filters with above
 #       indexes, to make efficient Join operations
-
-# TODO: Perhaps instead of Equals, etc, we can have some kind of theta-join-generator.
-#       Given the values in column :a, make sure IsEqual(b = value in :a)
-#       This could then simply be lambda, we can construct a custom `In` for example.

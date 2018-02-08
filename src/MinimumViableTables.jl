@@ -6,6 +6,8 @@ using Base: @pure, @propagate_inbounds, @_propagate_inbounds_meta, @_inline_meta
 import Base: size, axes, getindex, setindex!, show, similar, copy, filter, map, findall,
              getproperty, in
 
+import LinearAlgebra: cross, ×
+
 using Indexing
 
 export colnames, columns, indexes, project, Project, addindex, getindexes, rename, Rename
@@ -13,7 +15,9 @@ export colnames, columns, indexes, project, Project, addindex, getindexes, renam
 export AbstractIndex, AbstractUniqueIndex, NoIndex, UniqueIndex, HashIndex, UniqueHashIndex,
        SortIndex, UniqueSortIndex
 
-export Table, IsEqual, IsLess, IsLessEqual, IsGreater, IsGreaterEqual, In, Equals
+export Table, ProductTable, IsEqual, IsLess, IsLessEqual, IsGreater, IsGreaterEqual, In, Equals
+
+export ×
 
 include("interval.jl")
 
@@ -26,6 +30,8 @@ include("table.jl")
 include("makeindex.jl")
 include("predicates.jl")
 
+include("producttable.jl")
+
 end # module
 
 # Fundamental relational algebra operations:
@@ -34,7 +40,7 @@ end # module
 # Projections: project, Project{names} (also map)
 # Selections: filter (accelerated when using filter predicates like IsEqual)
 # Renames: rename, Rename{oldnames, newnames} (also map)
-# Cartesian product: todo, probably lazy, possibly a matrix of named tuples?
+# Cartesian product: ProductTable - a matrix of named tuples?
 #
 # Add a new column based on existing columns: ?? (also map)
 #
