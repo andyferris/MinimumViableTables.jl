@@ -29,6 +29,16 @@
         @test !_issetequal((:b,), (:a,:b))
     end
 
+    @testset "_intersect" begin
+        @test _intersect((:a, :b, :c), (:a, :c)) === (:a, :c)
+        @test _intersect((:a, :b, :c), (:c, :a)) === (:a, :c)
+    end
+
+    @testset "_setdiff" begin
+        @test _setdiff((:a, :b, :c), (:a, :c)) === (:b,)
+        @test _setdiff((:a, :b, :c), (:c, :a)) === (:b,)
+    end
+
     @testset "_headsubset" begin
         @test _headsubset((), ()) === ()
         @test _headsubset((), (:a,)) === ()
@@ -107,4 +117,5 @@
 
     @testset "_cat_types" begin
         @test @inferred(_cat_types(Tuple{Int, String}, Tuple{Float64, Nothing})) == Tuple{Int, String, Float64, Nothing}
+    end
 end

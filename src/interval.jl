@@ -57,7 +57,9 @@ function in(x::T, interval::Interval{T}) where {T}
     return !isless(x, interval.start) && !isless(interval.stop, x)
 end
 
-in(x, interval::Interval{T}) where {T} = in(convert(T, x), interval)
+function in(x, interval::Interval{T}) where {T}
+    return !isless(promote(x, interval.start)...) && !isless(promote(interval.stop, x)...)
+end
 
 function Base.:(==)(i1::Interval, i2::Interval)
     (isequal(i1.start, i2.start) && isequal(i1.stop, i2.stop)) || isless(i1.stop, i2.start)

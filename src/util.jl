@@ -29,6 +29,26 @@ end
     return out
 end
 
+@pure function _intersect(a::Tuple{Vararg{Symbol}}, b::Tuple{Vararg{Symbol}})
+    out = ()
+    for s ∈ a
+        if s ∈ b
+            out = (out..., s)
+        end
+    end
+    return out
+end
+
+@pure function _setdiff(a::Tuple{Vararg{Symbol}}, b::Tuple{Vararg{Symbol}})
+    out = ()
+    for s ∈ a
+        if s ∉ b
+            out = (out..., s)
+        end
+    end
+    return out
+end
+
 @generated function _eltypes(a::Tuple{Vararg{AbstractVector}})
     Ts = []
     for V in a.parameters

@@ -3,7 +3,7 @@ using Test
 
 using MinimumViableTables: _issubset, _issetequal, _headsubset, _makevectors, _values, _all,
                            clean, searchsortedlastless, searchsortedfirstgreater,
-                           _valuetype, _cat_types
+                           _valuetype, _cat_types, _intersect, _setdiff
 
 # TODO Make an @inferred-like macro to test inference with constant propagation
 

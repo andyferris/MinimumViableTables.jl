@@ -15,9 +15,10 @@ export colnames, columns, indexes, project, Project, addindex, getindexes, renam
 export AbstractIndex, AbstractUniqueIndex, NoIndex, UniqueIndex, HashIndex, UniqueHashIndex,
        SortIndex, UniqueSortIndex
 
-export Table, ProductTable, IsEqual, IsLess, IsLessEqual, IsGreater, IsGreaterEqual, In, Equals
+export Table, ProductTable, ×, cross
 
-export ×
+export IsEqual, IsLess, IsLessEqual, IsGreater, IsGreaterEqual, In
+export Equals, LessThan, LessEqualThan, GreaterThan, GreaterEqualThan, Within
 
 include("interval.jl")
 

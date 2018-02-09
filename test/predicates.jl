@@ -384,4 +384,133 @@
         @test findall(pred, t4ba) == [1, 2]
         @test filter(pred, t4ba) == Table(a = [2, 3], b = [4.0, 6.0])
     end
+
+    @testset "Equals" begin
+        pred = Equals(:a, :b)
+        
+        @test pred((a=1, b=1)) === true
+        @test pred((a=2, b=4.0)) === false
+        @test pred((a=1, b=1, c=2.0)) === true
+        @test pred((a=2, b=4.0, c=2.0)) === false
+        @test pred((b=1, a=1)) === true
+        @test pred((b=2, a=4.0)) === false
+
+        va = [2, 3, 1]
+        vb = [2, 1, 3]
+        t = Table(a = va, b = vb)
+
+        @test map(pred, t) == [true, false, false]
+        @test findall(pred, t) == [1]
+        @test filter(pred, t) == Table(a = [2], b = [2])
+    end
+
+    @testset "LessThan" begin
+        pred = LessThan(:a, :b)
+        
+        @test pred((a=1, b=0)) === false
+        @test pred((a=1, b=1)) === false
+        @test pred((a=1, b=2)) === true
+        @test pred((a=1, b=1, c=2.0)) === false
+        @test pred((a=1, b=2, c=2.0)) === true
+        @test pred((b=1, a=1)) === false
+        @test pred((b=2, a=1)) === true
+
+        va = [2, 3, 1]
+        vb = [2, 1, 3]
+        t = Table(a = va, b = vb)
+
+        @test map(pred, t) == [false, false, true]
+        @test findall(pred, t) == [3]
+        @test filter(pred, t) == Table(a = [1], b = [3])
+    end
+
+    @testset "LessEqualThan" begin
+        pred = LessEqualThan(:a, :b)
+        
+        @test pred((a=1, b=0)) === false
+        @test pred((a=1, b=1)) === true
+        @test pred((a=1, b=2)) === true
+        @test pred((a=1, b=0, c=2.0)) === false
+        @test pred((a=1, b=1, c=2.0)) === true
+        @test pred((a=1, b=2, c=2.0)) === true
+        @test pred((b=0, a=1)) === false
+        @test pred((b=1, a=1)) === true
+        @test pred((b=2, a=1)) === true
+
+        va = [2, 3, 1]
+        vb = [2, 1, 3]
+        t = Table(a = va, b = vb)
+
+        @test map(pred, t) == [true, false, true]
+        @test findall(pred, t) == [1, 3]
+        @test filter(pred, t) == Table(a = [2, 1], b = [2, 3])
+    end
+
+    @testset "GreaterThan" begin
+        pred = GreaterThan(:a, :b)
+        
+        @test pred((a=1, b=0)) === true
+        @test pred((a=1, b=1)) === false
+        @test pred((a=1, b=2)) === false
+        @test pred((a=1, b=0, c=2.0)) === true
+        @test pred((a=1, b=1, c=2.0)) === false
+        @test pred((a=1, b=2, c=2.0)) === false
+        @test pred((b=0, a=1)) === true
+        @test pred((b=1, a=1)) === false
+        @test pred((b=2, a=1)) === false
+
+        va = [2, 3, 1]
+        vb = [2, 1, 3]
+        t = Table(a = va, b = vb)
+
+        @test map(pred, t) == [false, true, false]
+        @test findall(pred, t) == [2]
+        @test filter(pred, t) == Table(a = [3], b = [1])
+    end
+
+    @testset "GreaterEqualThan" begin
+        pred = GreaterEqualThan(:a, :b)
+        
+        @test pred((a=1, b=0)) === true
+        @test pred((a=1, b=1)) === true
+        @test pred((a=1, b=2)) === false
+        @test pred((a=1, b=0, c=2.0)) === true
+        @test pred((a=1, b=1, c=2.0)) === true
+        @test pred((a=1, b=2, c=2.0)) === false
+        @test pred((b=0, a=1)) === true
+        @test pred((b=1, a=1)) === true
+        @test pred((b=2, a=1)) === false
+
+        va = [2, 3, 1]
+        vb = [2, 1, 3]
+        t = Table(a = va, b = vb)
+
+        @test map(pred, t) == [true, true, false]
+        @test findall(pred, t) == [1, 2]
+        @test filter(pred, t) == Table(a = [2, 3], b = [2, 1])
+    end
+
+    @testset "Within" begin
+        pred = Within(:a, :b, 1)
+        
+        @test pred((a=1, b=-1)) === false
+        @test pred((a=1, b=0)) === true
+        @test pred((a=1, b=1)) === true
+        @test pred((a=1, b=2)) === true
+        @test pred((a=1, b=3)) === false
+        @test pred((a=1, b=-1, c=2.0)) === false
+        @test pred((a=1, b=1, c=2.0)) === true
+        @test pred((a=1, b=3, c=2.0)) === false
+        @test pred((b=-1, a=1)) === false
+        @test pred((b=1, a=1)) === true
+        @test pred((b=3, a=1)) === false
+
+        va = [2, 3, 1]
+        vb = [2, 1, 3]
+        t = Table(a = va, b = vb)
+
+        @test map(pred, t) == [true, false, false]
+        @test findall(pred, t) == [1]
+        @test filter(pred, t) == Table(a = [2], b = [2])
+    end
 end

@@ -974,8 +974,6 @@ function _filter_indices(pred::IsEqual{names, Tuple{<:Interval}}, t::Table{names
     return _findall(pred, t, index)
 end
 
-# TODO: `NotEqual` and `NotIn` ?? Or introduce `Not{<:Predicate} <: Predicate`?
-
 """
     Equals(name1, name2)
 
@@ -997,60 +995,169 @@ function (pred::Equals{names})(x::NamedTuple{names2}) where {names, names2}
     end
 end
 
-function _map(pred::Equals{names}, t::Table{names}, index::SortIndex{names}) where {names}
-    # TODO sort-merge join algorithm could benefit from `searchsortednext`
+# function _map(pred::Equals{names}, t::Table{names}, index::SortIndex{names}) where {names}
+#     # TODO sort-merge join algorithm could benefit from `searchsortednext`
 
-    # TODO finish this!
-    return _map(pred, t, SortIndex{(names[2],)}())
+#     # TODO finish this!
+#     return _map(pred, t, SortIndex{(names[2],)}())
 
-    # out = fill(false, length(t))
-    # if length(t) == 0
-    #     return out
-    # end
+#     # out = fill(false, length(t))
+#     # if length(t) == 0
+#     #     return out
+#     # end
 
-    # cols = columns(t)
-    # v1 = getproperty(cols, names[1])
-    # v2 = getproperty(cols, names[2])
+#     # cols = columns(t)
+#     # v1 = getproperty(cols, names[1])
+#     # v2 = getproperty(cols, names[2])
 
-    # # The sort-merge join algorithm
-    # i1 = 1
-    # i2 = 0
-    # n = length(t)
-    # @inbounds x = v1[1]
-    # while i1 < n && i2 < n
-    #     if i2 == i1
-    #         @inbounds out[i1] = true
-    #         i1 += 1
-    #     elseif i2 < i1
-    #         i2 = searchsortedfirst(v2, x)
-    #         @inbounds x = v2[i2]
-    #     else
+#     # # The sort-merge join algorithm
+#     # i1 = 1
+#     # i2 = 0
+#     # n = length(t)
+#     # @inbounds x = v1[1]
+#     # while i1 < n && i2 < n
+#     #     if i2 == i1
+#     #         @inbounds out[i1] = true
+#     #         i1 += 1
+#     #     elseif i2 < i1
+#     #         i2 = searchsortedfirst(v2, x)
+#     #         @inbounds x = v2[i2]
+#     #     else
 
-    #     end
+#     #     end
         
-    #     @inbounds x = v2[1]
+#     #     @inbounds x = v2[1]
     
-    # end
+#     # end
     
-    # return out
+#     # return out
+# end
+
+# function _map(pred::Equals{names}, t::Table{names}, index::SortIndex{names2}) where {names, names2}
+#     if length(names2) !== 0 && length(names2) !== 1
+#         if names2[1] === names[2] && names2[2] === names[1]
+#             p = Project((names[2], names[1]))
+#             _map(Equals(names[2], names[1]), p(t), index)
+#         end
+#     end
+
+#     return _map(pred, t, NoIndex())
+# end
+
+"""
+    LessThan(name1, name2)
+
+Creates an `LessThan` function, which returns true on any named tuple whose field `name1`
+is `isless` to the field `name2`.
+
+See also `IsLess` for comparing one or more columns of a table to a fixed value.
+"""
+struct LessThan{names} <: Predicate{names}
+end
+@inline LessThan(n1::Symbol, n2::Symbol) = LessThan{(n1, n2)}()
+@inline LessThan(names::Tuple{Symbol,Symbol}) = LessThan{names}()
+
+function (pred::LessThan{names})(x::NamedTuple{names2}) where {names, names2}
+    if names === names2
+        return isless(getproperty(x, names[1]), getproperty(x, names[2]))
+    else
+        return pred(Project(names)(x))
+    end
 end
 
-function _map(pred::Equals{names}, t::Table{names}, index::SortIndex{names2}) where {names, names2}
-    if length(names2) !== 0 && length(names2) !== 1
-        if names2[1] === names[2] && names2[2] === names[1]
-            p = Project((names[2], names[1]))
-            _map(Equals(names[2], names[1]), p(t), index)
-        end
-    end
+"""
+    LessEqualThan(name1, name2)
 
-    return _map(pred, t, NoIndex())
+Creates an `LessEqualThan` function, which returns true on any named tuple whose field `name1`
+is `isless` or `isequal` to the field `name2`.
+
+See also `IsLessEqual` for comparing one or more columns of a table to a fixed value.
+"""
+struct LessEqualThan{names} <: Predicate{names}
+end
+@inline LessEqualThan(n1::Symbol, n2::Symbol) = LessEqualThan{(n1, n2)}()
+@inline LessEqualThan(names::Tuple{Symbol,Symbol}) = LessEqualThan{names}()
+
+function (pred::LessEqualThan{names})(x::NamedTuple{names2}) where {names, names2}
+    if names === names2
+        return !isless(getproperty(x, names[2]), getproperty(x, names[1]))
+    else
+        return pred(Project(names)(x))
+    end
+end
+
+"""
+    GreaterThan(name1, name2)
+
+Creates an `GreaterThan` function, which returns true on any named tuple whose field `name2`
+is `isless` to the field `name1`.
+
+See also `IsGreater` for comparing one or more columns of a table to a fixed value.
+"""
+struct GreaterThan{names} <: Predicate{names}
+end
+@inline GreaterThan(n1::Symbol, n2::Symbol) = GreaterThan{(n1, n2)}()
+@inline GreaterThan(names::Tuple{Symbol,Symbol}) = GreaterThan{names}()
+
+function (pred::GreaterThan{names})(x::NamedTuple{names2}) where {names, names2}
+    if names === names2
+        return isless(getproperty(x, names[2]), getproperty(x, names[1]))
+    else
+        return pred(Project(names)(x))
+    end
+end
+
+"""
+    GreaterEqualThan(name1, name2)
+
+Creates an `GreaterEqualThan` function, which returns true on any named tuple whose field `name2`
+is `isless` or `isequal` to the field `name1`.
+
+See also `IsGreaterEqual` for comparing one or more columns of a table to a fixed value.
+"""
+struct GreaterEqualThan{names} <: Predicate{names}
+end
+@inline GreaterEqualThan(n1::Symbol, n2::Symbol) = GreaterEqualThan{(n1, n2)}()
+@inline GreaterEqualThan(names::Tuple{Symbol,Symbol}) = GreaterEqualThan{names}()
+
+function (pred::GreaterEqualThan{names})(x::NamedTuple{names2}) where {names, names2}
+    if names === names2
+        return !isless(getproperty(x, names[1]), getproperty(x, names[2]))
+    else
+        return pred(Project(names)(x))
+    end
+end
+
+"""
+    Within(name1, name2, distance)
+
+Creates an `Within` function, which returns true on any named tuple whose field `name1`
+is within `±distance` of `name2` (inclusive).
+
+See also `In` for determining if one or more columns of a table is within a given `Interval`.
+"""
+struct Within{names, T} <: Predicate{names}
+    distance::T
+end
+@inline Within(n1::Symbol, n2::Symbol, distance::T) where {T} = Within{(n1, n2), T}(distance)
+@inline Within(names::Tuple{Symbol,Symbol}, distance::T) where {T} = Within{names, T}(distance)
+
+function (pred::Within{names})(x::NamedTuple{names2}) where {names, names2}
+    if names === names2
+        x0 = getproperty(x, names[1])
+        interval = (x0 - pred.distance) .. (x0 + pred.distance)
+        return getproperty(x, names[2]) ∈ interval
+    else
+        return pred(Project(names)(x))
+    end
 end
 
 # TODO: Perhaps instead of Equals, etc, we can have some kind of theta-join-generator.
 #       Given the values in column :a, make sure IsEqual(b = value in :a)
 #       This could then simply be lambda, we can construct a custom `In` for example.
+#       Need to have a nice system to organize dispatch in order to support sort-merge joins... 
 
-# TODO: Some way of dealing with multiple indexes. E.g. two sort indexes and sort-merge join.
+# TODO: Some way of dealing with multiple indexes on one table. E.g. two sort indexes and sort-merge filter.
 
 # TODO: Implement Cartesian outer product between tables, then faster filters with above
 #       indexes, to make efficient Join operations

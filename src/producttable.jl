@@ -47,4 +47,4 @@ end
 
 # TODO map and findall... need some other lazy containers...
 
-# TODO fast filter on predicates which span tables
+# TODO fast filter on predicates which span tables like Equals, LessThan (etc), Within
