@@ -121,7 +121,75 @@ _valuetype(::NamedTuple{names, T}) where {names, T} = T
     return Tuple{T1.parameters..., T2.parameters...}
 end
 
-# TODO do something much better than this. Ultimately needs fixing in Base...
-Base.isless(a::NamedTuple{n}, b::NamedTuple{n}) where {n} = isless(MinimumViableTables._values(a), MinimumViableTables._values(b))
+# unroll loop for isless, isequal on tuples and named tuples
+# TODO migrate this to Base
 
-# TODO unroll loop for isless, isequal on tuples and named tuples
+#@inline isequal(a, b) = Base.isequal(a, b)
+
+# @generated function Base.isequal(a::NTuple{n, Any}, b::NTuple{n, Any}) where {n}
+#     if n === 0
+#         return true
+#     end
+
+#     expr = :(isequal(a[1], b[1]))
+#     for i = 2:n
+#         expr = :($expr && isequal(a[$i], b[$i]))
+#     end
+#     return quote
+#         @_inline_meta
+#         return $expr
+#     end
+# end
+
+# @generated function Base.isequal(a::NamedTuple{names}, b::NamedTuple{names}) where {nanes}
+#     n = length(names)
+#     if n === 0
+#         return true
+#     end
+
+#     expr = :(isequal(a.$(names[1]), b.$(names[1])))
+#     for i = 2:n
+#         expr = :($expr && isequal(a.$(names[i]), b.$(names[i])))
+#     end
+#     return quote
+#         @_inline_meta
+#         return $expr
+#     end
+# end
+
+# #@inline isless(a, b) = Base.isless(a, b)
+
+# @generated function Base.isless(a::NTuple{n, Any}, b::NTuple{n, Any}) where {n}
+#     if n === 0
+#         return true
+#     end
+
+#     expr = :(isless(a[1], b[1]))
+#     for i = 2:n
+#         expr = :($expr || (isequal(a[$i-1], b[$i-1]) && isless(a[$i], b[$i]))) 
+#     end
+#     return quote
+#         @_inline_meta
+#         return $expr
+#     end
+# end
+
+# @generated function Base.isless(a::NamedTuple{names}, b::NamedTuple{names}) where {nanes}
+#     n = length(names)
+#     if n === 0
+#         return true
+#     end
+
+#     expr = :(isless(a.$(names[1]), b.$(names[1])))
+#     for i = 2:n
+#         expr = :($expr || (isequal(a.$(names[i-1]), b.$(names[i-1])) && isless(a.$(names[i]), b.$(names[i]))))
+#     end
+#     return quote
+#         @_inline_meta
+#         return $expr
+#     end
+# end
+
+# TODO check behavior of Base.hash for 
+#  * large tuples (the algorithm uses recursion - does inference bail out at some point?)
+#  * named tuples (that invokes `Tuple(::NamedTuple)`...)
