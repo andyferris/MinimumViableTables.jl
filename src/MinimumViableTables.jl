@@ -10,7 +10,7 @@ import LinearAlgebra: cross, ×
 
 using Indexing
 
-export colnames, columns, indexes, project, Project, addindex, getindexes, rename, Rename
+export colnames, columns, getindexes, project, Project, addindex, rename, Rename
 
 export AbstractIndex, AbstractUniqueIndex, NoIndex, UniqueIndex, HashIndex, UniqueHashIndex,
        SortIndex, UniqueSortIndex

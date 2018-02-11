@@ -120,3 +120,8 @@ _valuetype(::NamedTuple{names, T}) where {names, T} = T
 @generated function _cat_types(::Type{T1}, ::Type{T2}) where {T1 <: Tuple, T2 <: Tuple}
     return Tuple{T1.parameters..., T2.parameters...}
 end
+
+# TODO do something much better than this. Ultimately needs fixing in Base...
+Base.isless(a::NamedTuple{n}, b::NamedTuple{n}) where {n} = isless(MinimumViableTables._values(a), MinimumViableTables._values(b))
+
+# TODO unroll loop for isless, isequal on tuples and named tuples
