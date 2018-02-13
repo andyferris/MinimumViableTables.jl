@@ -65,7 +65,7 @@ end
     end
 end
 
-@generated function _values(nt::NamedTuple{names}) where {names}
+@generated function _values(nt::NamedTuple{names}) where {names} # TODO replace with Tuple
     exprs = [:(getproperty(nt, $(Expr(:quote, n)))) for n in names]
     return quote
         @_inline_meta
@@ -121,75 +121,61 @@ _valuetype(::NamedTuple{names, T}) where {names, T} = T
     return Tuple{T1.parameters..., T2.parameters...}
 end
 
-# unroll loop for isless, isequal on tuples and named tuples
+# TODO migrating this to Base: https://github.com/JuliaLang/julia/pull/26025
+function Tuple(nt::NamedTuple{names}) where {names}
+    if @generated
+        return Expr(:tuple, Any[:(getfield(nt, $(QuoteNode(n)))) for n in names]...)
+    else
+        return tuple(nt...)
+    end
+end
+(::Type{T})(nt::NamedTuple{names, T}) where {names, T <: Tuple} = Tuple(nt)
+
 # TODO migrate this to Base
+# unroll loop for isless, isequal on tuples and named tuples
+import Base: isequal, isless
 
-#@inline isequal(a, b) = Base.isequal(a, b)
+isequal(::Tuple, ::Tuple) = false
+isequal(::Tuple{}, ::Tuple{}) = true
+function isequal(a::NTuple{n, Any}, b::NTuple{n, Any}) where {n}
+    if @generated
+        return foldr((x, y) -> :($x && $y), [:(isequal(a[$i], b[$i])) for i = 1:n])
+    else
+        for i = 1:length(a)
+            if !isequal(a[i], b[i])
+                return false
+            end
+        end
+        return true
+    end
+end
 
-# @generated function Base.isequal(a::NTuple{n, Any}, b::NTuple{n, Any}) where {n}
-#     if n === 0
-#         return true
-#     end
-
-#     expr = :(isequal(a[1], b[1]))
-#     for i = 2:n
-#         expr = :($expr && isequal(a[$i], b[$i]))
-#     end
-#     return quote
-#         @_inline_meta
-#         return $expr
-#     end
-# end
-
-# @generated function Base.isequal(a::NamedTuple{names}, b::NamedTuple{names}) where {nanes}
-#     n = length(names)
-#     if n === 0
-#         return true
-#     end
-
-#     expr = :(isequal(a.$(names[1]), b.$(names[1])))
-#     for i = 2:n
-#         expr = :($expr && isequal(a.$(names[i]), b.$(names[i])))
-#     end
-#     return quote
-#         @_inline_meta
-#         return $expr
-#     end
-# end
-
-# #@inline isless(a, b) = Base.isless(a, b)
-
-# @generated function Base.isless(a::NTuple{n, Any}, b::NTuple{n, Any}) where {n}
-#     if n === 0
-#         return true
-#     end
-
-#     expr = :(isless(a[1], b[1]))
-#     for i = 2:n
-#         expr = :($expr || (isequal(a[$i-1], b[$i-1]) && isless(a[$i], b[$i]))) 
-#     end
-#     return quote
-#         @_inline_meta
-#         return $expr
-#     end
-# end
-
-# @generated function Base.isless(a::NamedTuple{names}, b::NamedTuple{names}) where {nanes}
-#     n = length(names)
-#     if n === 0
-#         return true
-#     end
-
-#     expr = :(isless(a.$(names[1]), b.$(names[1])))
-#     for i = 2:n
-#         expr = :($expr || (isequal(a.$(names[i-1]), b.$(names[i-1])) && isless(a.$(names[i]), b.$(names[i]))))
-#     end
-#     return quote
-#         @_inline_meta
-#         return $expr
-#     end
-# end
-
-# TODO check behavior of Base.hash for 
-#  * large tuples (the algorithm uses recursion - does inference bail out at some point?)
-#  * named tuples (that invokes `Tuple(::NamedTuple)`...)
+isless(::Tuple{}, ::Tuple{}) = false
+isless(::Tuple{}, ::Tuple) = true
+isless(::Tuple, ::Tuple{}) = false
+function isless(a::NTuple{n, Any}, b::NTuple{m, Any}) where {n, m}
+    if @generated
+        expr = :(isless(a[$(min(n,m))], b[$(min(n,m))]))
+        if n < m
+            expr = :($expr || isequal(a[$(min(n,m))], b[$(min(n,m))]))
+        end
+        for i = min(n,m)-1:-1:1
+            expr = :(isless(a[$i], b[$i]) || (isequal(a[$i], b[$i]) && $expr))
+        end
+        return expr
+    else
+        if isless(a[1], b[1])
+            return true
+        end
+        for i = 2:min(n, m)
+            if isequal(a[i-1], b[i-1])
+                if isless(a[i], b[i])
+                    return true
+                end
+            else
+                return false
+            end
+        end
+        return n < m && isequal(a[min(n, m)], b[min(n, m)])
+    end
+end
