@@ -15,8 +15,9 @@ export colnames, columns, getindexes, project, Project, addindex, rename, Rename
 export AbstractIndex, AbstractUniqueIndex, NoIndex, UniqueIndex, HashIndex, UniqueHashIndex,
        SortIndex, UniqueSortIndex
 
-export Table, ProductTable, ×, cross
+export Table, ProductArray, ProductTable, ×, cross
 
+export Predicate
 export IsEqual, IsLess, IsLessEqual, IsGreater, IsGreaterEqual, In
 export Equals, LessThan, LessEqualThan, GreaterThan, GreaterEqualThan, Within
 
@@ -31,6 +32,7 @@ include("table.jl")
 include("makeindex.jl")
 include("predicates.jl")
 
+include("custom_arrays.jl")
 include("producttable.jl")
 
 end # module

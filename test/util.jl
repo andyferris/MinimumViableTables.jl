@@ -95,6 +95,10 @@
         @test searchsortedfirstgreater([1,2,3,4], 5) === 5
     end
 
+    @testset "_add" begin
+        @test _add(3, 4) === 7
+    end
+
     @testset "_all" begin
         @test _all(&, (), ())
         @test _all(&, (true,), (true,))

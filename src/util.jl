@@ -96,6 +96,8 @@ function searchsortedfirstgreater(v::AbstractVector, x, lo::Int = first(keys(v))
     return hi
 end
 
+@pure _add(n::Int, m::Int) = n + m
+
 _all(f, ::Tuple{}, ::Tuple{}) = true
 @generated function _all(f, t1::NTuple{n, Any}, t2::NTuple{n, Any}) where {n}
     exprs = [:(f(t1[$i], t2[$i])) for i = 1:n]

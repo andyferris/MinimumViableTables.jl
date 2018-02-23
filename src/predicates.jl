@@ -9,7 +9,7 @@ function map(pred::Predicate{names}, t::Table) where {names}
     # First get the indices using the acceleration indices
     t_projected = Project(names)(t)
     index = promote_index(getindexes(t_projected)...)
-    return _map(pred, t_projected, promote_index(getindexes(t_projected)...))
+    return _map(pred, t_projected, index)
 end
 
 function _map(pred::Predicate{names}, t::Table{names}, ::AbstractIndex) where {names}
@@ -20,7 +20,7 @@ function findall(pred::Predicate{names}, t::Table) where {names}
     # First get the indices using the acceleration indices
     t_projected = Project(names)(t)
     index = promote_index(getindexes(t_projected)...)
-    return _findall(pred, t_projected, promote_index(getindexes(t_projected)...))
+    return _findall(pred, t_projected, index)
 end
 
 function _findall(pred::Predicate{names}, t::Table{names}, ::AbstractIndex) where {names}
@@ -995,6 +995,16 @@ function (pred::Equals{names})(x::NamedTuple{names2}) where {names, names2}
     end
 end
 
+function Predicate(pred::Equals{names}, x::NamedTuple{names2}) where {names, names2}
+    if names[1] === names2[1]
+        return IsEqual(NamedTuple{(names[2],)}(Tuple(x)))
+    elseif names[2] === names2[1]
+        return IsEqual(NamedTuple{(names[1],)}(Tuple(x)))
+    else
+        error("Can't create conditional predicate from $pred and $x")
+    end
+end
+
 # function _map(pred::Equals{names}, t::Table{names}, index::SortIndex{names}) where {names}
 #     # TODO sort-merge join algorithm could benefit from `searchsortednext`
 
@@ -1065,6 +1075,16 @@ function (pred::LessThan{names})(x::NamedTuple{names2}) where {names, names2}
     end
 end
 
+function Predicate(pred::LessThan{names}, x::NamedTuple{names2}) where {names, names2}
+    if names[1] === names2[1]
+        return IsGreaterEqual(NamedTuple{(names[2],)}(Tuple(x)))
+    elseif names[2] === names2[1]
+        return IsLess(NamedTuple{(names[1],)}(Tuple(x)))
+    else
+        error("Can't create conditional predicate from $pred and $x")
+    end
+end
+
 """
     LessEqualThan(name1, name2)
 
@@ -1083,6 +1103,16 @@ function (pred::LessEqualThan{names})(x::NamedTuple{names2}) where {names, names
         return !isless(getproperty(x, names[2]), getproperty(x, names[1]))
     else
         return pred(Project(names)(x))
+    end
+end
+
+function Predicate(pred::LessEqualThan{names}, x::NamedTuple{names2}) where {names, names2}
+    if names[1] === names2[1]
+        return IsGreater(NamedTuple{(names[2],)}(Tuple(x)))
+    elseif names[2] === names2[1]
+        return IsLessEqual(NamedTuple{(names[1],)}(Tuple(x)))
+    else
+        error("Can't create conditional predicate from $pred and $x")
     end
 end
 
@@ -1107,6 +1137,16 @@ function (pred::GreaterThan{names})(x::NamedTuple{names2}) where {names, names2}
     end
 end
 
+function Predicate(pred::GreaterThan{names}, x::NamedTuple{names2}) where {names, names2}
+    if names[1] === names2[1]
+        return IsLessEqual(NamedTuple{(names[2],)}(Tuple(x)))
+    elseif names[2] === names2[1]
+        return IsGreater(NamedTuple{(names[1],)}(Tuple(x)))
+    else
+        error("Can't create conditional predicate from $pred and $x")
+    end
+end
+
 """
     GreaterEqualThan(name1, name2)
 
@@ -1125,6 +1165,16 @@ function (pred::GreaterEqualThan{names})(x::NamedTuple{names2}) where {names, na
         return !isless(getproperty(x, names[1]), getproperty(x, names[2]))
     else
         return pred(Project(names)(x))
+    end
+end
+
+function Predicate(pred::GreaterEqualThan{names}, x::NamedTuple{names2}) where {names, names2}
+    if names[1] === names2[1]
+        return IsLess(NamedTuple{(names[2],)}(Tuple(x)))
+    elseif names[2] === names2[1]
+        return GreaterEqualThan(NamedTuple{(names[1],)}(Tuple(x)))
+    else
+        error("Can't create conditional predicate from $pred and $x")
     end
 end
 
@@ -1152,12 +1202,15 @@ function (pred::Within{names})(x::NamedTuple{names2}) where {names, names2}
     end
 end
 
-# TODO: Perhaps instead of Equals, etc, we can have some kind of theta-join-generator.
-#       Given the values in column :a, make sure IsEqual(b = value in :a)
-#       This could then simply be lambda, we can construct a custom `In` for example.
-#       Need to have a nice system to organize dispatch in order to support sort-merge joins... 
+function Predicate(pred::Within{names}, x::NamedTuple{names2}) where {names, names2}
+    val = Tuple(x)[1]
+    if names[1] === names2[1]
+        return In(NamedTuple{(names[2],)}(((val - pred.distance) .. (val + pred.distance),)))
+    elseif names[2] === names2[1]
+        return In(NamedTuple{(names[1],)}(((val - pred.distance) .. (val + pred.distance),)))
+    else
+        error("Can't create conditional predicate from $pred and $x")
+    end
+end
 
 # TODO: Some way of dealing with multiple indexes on one table. E.g. two sort indexes and sort-merge filter.
-
-# TODO: Implement Cartesian outer product between tables, then faster filters with above
-#       indexes, to make efficient Join operations

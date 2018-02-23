@@ -1,7 +1,7 @@
 using MinimumViableTables
 using Test
 
-using MinimumViableTables: _issubset, _issetequal, _headsubset, _makevectors, _all,
+using MinimumViableTables: _issubset, _issetequal, _headsubset, _makevectors, _add, _all,
                            clean, searchsortedlastless, searchsortedfirstgreater,
                            _valuetype, _cat_types, _intersect, _setdiff
 
@@ -16,3 +16,6 @@ include("index.jl")
 include("table.jl")
 include("makeindex.jl")
 include("predicates.jl")
+
+include("custom_arrays.jl")
+include("producttable.jl")

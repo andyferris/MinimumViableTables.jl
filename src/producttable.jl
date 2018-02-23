@@ -17,7 +17,7 @@ axes(table::ProductTable) = (axes(table.t1)..., axes(table.t2)...)
 end
 
 colnames(::ProductTable{names}) where {names} = names
-#columns(t::ProductTable{names}) where {names} = NamedTuple{names}(columns(t.t1)..., columns(t.t2)...)
+#columns(t::ProductTable{names}) where {names} = NamedTuple{names}(map(name ->)
 #getindexes(t::ProductTable) = (getindexes(t.t1)..., getindexes(t.t2)...)
 
 @inline function project(t::ProductTable, names::Tuple{Vararg{Symbol}})
@@ -36,6 +36,7 @@ function similar(t::ProductTable, ::Type{NamedTuple{names, Ts}}, dims::Tuple{Int
     return Table{names}(data)
 end
 
+# Filter - seperate case where predicate applies just to one part of the product table
 function filter(pred::Predicate{names}, t::ProductTable{<:Any, <:Any, <:AbstractVector{<:NamedTuple{n1}}, <:AbstractVector{<:NamedTuple{n2}}}) where {names, n1, n2}
     if _issubset(names, n1)
         return ProductTable(filter(pred, t.t1), t.t2)
@@ -45,6 +46,68 @@ function filter(pred::Predicate{names}, t::ProductTable{<:Any, <:Any, <:Abstract
     return @inbounds t[map(pred, t)]
 end
 
-# TODO map and findall... need some other lazy containers...
+# Map
 
-# TODO fast filter on predicates which span tables like Equals, LessThan (etc), Within
+# First layer of dispatch seperates cases where predicate applies just to one part of the product table
+function map(pred::Predicate{names}, t::ProductTable{<:Any, <:Any, <:AbstractVector{<:NamedTuple{n1}}, <:AbstractVector{<:NamedTuple{n2}}}) where {names, n1, n2}
+    if _issubset(names, n1)
+        return ProductArray((x, y) -> x, map(pred, t.t1), Array{Nothing}(uninitialized, size(t.t2)))
+    elseif _issubset(names, n2)
+        return ProductArray((x, y) -> y, Array{Nothing}(uninitialized, size(t.t1)), mao(pred, t.t2))
+    end
+
+    n1_projected = _intersect(names, n1)
+    n2_projected = _intersect(names, n2)
+    names_projected = (n1_projected..., n2_projected...)
+
+    t_projected = project(t, names_projected)
+    index1 = promote_indexes(project(getindexes(t.t1), n1_projected)...)
+    index2 = promote_indexes(project(getindexes(t.t2), n2_projected)...)
+
+    return @inbounds _map(pred, t, index1, index2)
+end
+
+# Seperate the cases where we know we can or can't do some acceleration with the predicate
+function _map(pred::Predicate, t::ProductTable, ::NoIndex, ::NoIndex)
+    out = Array{Bool}(uninitialized, size(t))
+
+    @inbounds for i in keys(t)
+        out[i] = pred(t[i])
+    end
+
+    return out
+end
+
+# Default to applying the accelerated filter to the second table
+function _map(pred::Predicate, t::ProductTable, ::Any, ::Any)
+    out = Array{Bool}(uninitialized, size(t))
+    
+    @inbounds for i in keys(t.t1) 
+        x = t.t1[i]
+        tmp = map(Predicate(pred, x), t.t2)
+        out[i, :] = tmp
+    end
+
+    return out
+end
+
+# If the second table has no acceleration index, try switch the ordering
+function _map(pred::Predicate, t::ProductTable, ::Any, ::NoIndex) # Reverse looping order
+    out = Array{Bool}(uninitialized, size(t))
+    
+    @inbounds for i in keys(t.t2)
+        x = t.t2[i]
+        tmp = map(Predicate(pred, x), t.t1)
+        out[:, i] = tmp
+    end
+
+    return out
+end
+
+# TODO implement a sort-merge join algorithm:
+
+# function _map(pred::IsEqual, t::ProductTable, ::SortIndex, ::SortIndex)
+#     ...
+# end
+
+# TODO findall (should currently go via `map` by default...)
