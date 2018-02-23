@@ -7,7 +7,7 @@ end
 @inline rename(x, oldnames::Tuple{Vararg{Symbol}}, newnames::Tuple{Vararg{Symbol}}) = Rename(oldnames, newnames)(x)
 
 @inline function (::Rename{oldnames, newnames})(nt::NamedTuple{names}) where {oldnames, newnames, names}
-    return NamedTuple{_rename(Val(oldnames), Val(newnames), Val(names))}(_values(nt))
+    return NamedTuple{_rename(Val(oldnames), Val(newnames), Val(names))}(Tuple(nt))
 end
 
 # Tried @pure here but didn't seem to do what I expected...

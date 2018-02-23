@@ -22,7 +22,7 @@ function HashIndex{names}(t::Table) where {names}
     t_projected = Project(names)(t)
     d = Dict{_valuetype(eltype(t_projected)), Vector{Int}}()
     for i in keys(t_projected) # TODO make faster
-        row = _values(t_projected[i])
+        row = Tuple(t_projected[i])
         if haskey(d, row)
             push!(d[row], i)
         else
@@ -36,7 +36,7 @@ function UniqueHashIndex{names}(t::Table) where {names}
     t_projected = Project(names)(t)
     d = Dict{_valuetype(eltype(t_projected)), Int}()
     for i in keys(t_projected) # TODO make faster
-        row = _values(t_projected[i])
+        row = Tuple(t_projected[i])
         if haskey(d, row)
             error("Columns $names do not contain unique values")
         else

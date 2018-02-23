@@ -6,7 +6,7 @@ struct Table{names, T <: NamedTuple{names}, Vs <: Tuple{Vararg{AbstractVector}},
 end
 
 Table(;kwargs...) = Table(kwargs.data) # TODO `index` keyword argument?
-Table(nt::NamedTuple{names}, index::Tuple{Vararg{AbstractIndex}} = ()) where {names} = Table{names}(_values(nt), index)
+Table(nt::NamedTuple{names}, index::Tuple{Vararg{AbstractIndex}} = ()) where {names} = Table{names}(Tuple(nt), index)
 
 Table{names}(;kwargs...) where {names} = Table{names}(kwargs.data) # TODO `index` keyword argument?
 
@@ -16,7 +16,7 @@ function Table{names}(data::Tuple{Vararg{AbstractVector}}, index::Tuple{Vararg{A
 end
 
 function Table{names}(nt::NamedTuple{names, <:Tuple{Vararg{AbstractVector}}}, index::Tuple{Vararg{AbstractIndex}} = ()) where {names}
-    Table{names}(_values(nt), index)
+    Table{names}(Tuple(nt), index)
 end
 
 function Table{names}(nt::NamedTuple{names2, <:Tuple{Vararg{AbstractVector}}}, index::Tuple{Vararg{AbstractIndex}} = ()) where {names, names2}

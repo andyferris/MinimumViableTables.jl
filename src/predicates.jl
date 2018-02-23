@@ -54,12 +54,12 @@ struct IsEqual{names, D <: Tuple} <: Predicate{names}
     data::D
 end
 IsEqual(;kwargs...) = IsEqual(kwargs.data)
-IsEqual(nt::NamedTuple{names}) where {names} = IsEqual{names}(_values(nt))
+IsEqual(nt::NamedTuple{names}) where {names} = IsEqual{names}(Tuple(nt))
 IsEqual{names}(t::T) where {names, T <: Tuple} = IsEqual{names, T}(t)
 
 function (pred::IsEqual{names})(x::NamedTuple{names2}) where {names, names2}
     if names === names2
-        return isequal(pred.data, _values(x))
+        return isequal(pred.data, Tuple(x))
     else
         return pred(Project(names)(x))
     end
@@ -141,7 +141,7 @@ end
 function _map(pred::IsEqual{names}, t::Table{names}, index::HashIndex{names2}) where {names, names2}
     out = fill(false, length(t))
 
-    key = _values(Project(names2)(NamedTuple{names}(pred.data)))
+    key = Tuple(Project(names2)(NamedTuple{names}(pred.data)))
     if haskey(index.dict, key)
         inds = index.dict[key] # TODO make faster
         @inbounds for i in inds
@@ -168,7 +168,7 @@ end
 
 function _map(pred::IsEqual{names}, t::Table{names}, index::UniqueHashIndex{names2}) where {names, names2}
     out = fill(false, length(t))
-    key = _values(Project(names2)(NamedTuple{names}(pred.data)))
+    key = Tuple(Project(names2)(NamedTuple{names}(pred.data)))
 
     if haskey(index.dict, key) # TODO make faster
         i = index.dict[key]
@@ -242,7 +242,7 @@ function _findall(pred::IsEqual{names}, t::Table{names}, index::HashIndex{names}
 end
 
 function _findall(pred::IsEqual{names}, t::Table{names}, index::HashIndex{names2}) where {names, names2}
-    searchrow = _values(Project(names2)(NamedTuple{names}(pred.data)))
+    searchrow = Tuple(Project(names2)(NamedTuple{names}(pred.data)))
     inds = get(() -> Int[], index.dict, searchrow)
     if length(inds) == 0
         return inds
@@ -261,7 +261,7 @@ function _findall(pred::IsEqual{names}, t::Table{names}, index::UniqueHashIndex{
 end
 
 function _findall(pred::IsEqual{names}, t::Table{names}, index::UniqueHashIndex{names2}) where {names, names2}
-    searchrow = _values(Project(names2)(NamedTuple{names}(pred.data)))
+    searchrow = Tuple(Project(names2)(NamedTuple{names}(pred.data)))
     i = get(() -> 0, index.dict, searchrow)
     if i > 0 && @inbounds(pred(t[i]))
         return Int[i]
@@ -293,12 +293,12 @@ struct IsLess{names, D <: Tuple} <: Predicate{names}
     data::D
 end
 IsLess(;kwargs...) = IsLess(kwargs.data)
-IsLess(nt::NamedTuple{names}) where {names} = IsLess{names}(_values(nt))
+IsLess(nt::NamedTuple{names}) where {names} = IsLess{names}(Tuple(nt))
 IsLess{names}(t::T) where {names, T <: Tuple} = IsLess{names, T}(t)
 
 function (pred::IsLess{names})(x::NamedTuple{names2}) where {names, names2}
     if names === names2
-        return isless(_values(x), pred.data)
+        return isless(Tuple(x), pred.data)
     else
         return pred(Project(names)(x))
     end
@@ -444,12 +444,12 @@ struct IsLessEqual{names, D <: Tuple} <: Predicate{names}
     data::D
 end
 IsLessEqual(;kwargs...) = IsLessEqual(kwargs.data)
-IsLessEqual(nt::NamedTuple{names}) where {names} = IsLessEqual{names}(_values(nt))
+IsLessEqual(nt::NamedTuple{names}) where {names} = IsLessEqual{names}(Tuple(nt))
 IsLessEqual{names}(t::T) where {names, T <: Tuple} = IsLessEqual{names, T}(t)
 
 function (pred::IsLessEqual{names})(x::NamedTuple{names2}) where {names, names2}
     if names === names2
-        return !isless(pred.data, _values(x))
+        return !isless(pred.data, Tuple(x))
     else
         return pred(Project(names)(x))
     end
@@ -593,12 +593,12 @@ struct IsGreater{names, D <: Tuple} <: Predicate{names}
     data::D
 end
 IsGreater(;kwargs...) = IsGreater(kwargs.data)
-IsGreater(nt::NamedTuple{names}) where {names} = IsGreater{names}(_values(nt))
+IsGreater(nt::NamedTuple{names}) where {names} = IsGreater{names}(Tuple(nt))
 IsGreater{names}(t::T) where {names, T <: Tuple} = IsGreater{names, T}(t)
 
 function (pred::IsGreater{names})(x::NamedTuple{names2}) where {names, names2}
     if names === names2
-        return isless(pred.data, _values(x))
+        return isless(pred.data, Tuple(x))
     else
         return pred(Project(names)(x))
     end
@@ -743,12 +743,12 @@ struct IsGreaterEqual{names, D <: Tuple} <: Predicate{names}
     data::D
 end
 IsGreaterEqual(;kwargs...) = IsGreaterEqual(kwargs.data)
-IsGreaterEqual(nt::NamedTuple{names}) where {names} = IsGreaterEqual{names}(_values(nt))
+IsGreaterEqual(nt::NamedTuple{names}) where {names} = IsGreaterEqual{names}(Tuple(nt))
 IsGreaterEqual{names}(t::T) where {names, T <: Tuple} = IsGreaterEqual{names, T}(t)
 
 function (pred::IsGreaterEqual{names})(x::NamedTuple{names2}) where {names, names2}
     if names === names2
-        return !isless(_values(x), pred.data)
+        return !isless(Tuple(x), pred.data)
     else
         return pred(Project(names)(x))
     end
@@ -893,12 +893,12 @@ struct In{names, T <: Tuple} <: Predicate{names}
     data::T
 end
 In(;kwargs...) = In(kwargs.data)
-In(nt::NamedTuple{names}) where {names} = In{names}(_values(nt))
+In(nt::NamedTuple{names}) where {names} = In{names}(Tuple(nt))
 In{names}(t::T) where {names, T <: Tuple} = In{names, T}(t)
 
 function (pred::In{names})(x::NamedTuple{names2}) where {names, names2}
     if names === names2
-        return _all(in, _values(x), pred.data)
+        return _all(in, Tuple(x), pred.data)
     else
         return pred(Project(names)(x))
     end
