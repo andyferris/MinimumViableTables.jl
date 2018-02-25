@@ -20,8 +20,8 @@ colnames(::ProductTable{names}) where {names} = names
 #columns(t::ProductTable{names}) where {names} = NamedTuple{names}(map(name ->)
 #getindexes(t::ProductTable) = (getindexes(t.t1)..., getindexes(t.t2)...)
 
-@inline function project(t::ProductTable, names::Tuple{Vararg{Symbol}})
-    ProductTable(project(t.t1, names), project(t.t2, names))
+@inline function project(t::ProductTable{<:Any, <:Any, <:AbstractVector{<:NamedTuple{n1}}, <:AbstractVector{<:NamedTuple{n2}}}, names::Tuple{Vararg{Symbol}}) where {n1, n2}
+    ProductTable(project(t.t1, _intersect(names, n1)), project(t.t2, _intersect(names, n2)))
 end
 
 @inline function (r::Rename{oldnames, newnames})(t::ProductTable{names}) where {oldnames, newnames, names}
@@ -43,7 +43,7 @@ function filter(pred::Predicate{names}, t::ProductTable{<:Any, <:Any, <:Abstract
     elseif _issubset(names, n2)
         return ProductTable(t.t1, filter(pred, t.t2))
     end
-    return @inbounds t[map(pred, t)]
+    return @inbounds t[map(pred, t)] # Don't use map - requires N^2 memory and most joins are sparse
 end
 
 # Map
@@ -61,10 +61,10 @@ function map(pred::Predicate{names}, t::ProductTable{<:Any, <:Any, <:AbstractVec
     names_projected = (n1_projected..., n2_projected...)
 
     t_projected = project(t, names_projected)
-    index1 = promote_indexes(project(getindexes(t.t1), n1_projected)...)
-    index2 = promote_indexes(project(getindexes(t.t2), n2_projected)...)
+    index1 = promote_index(project(getindexes(t.t1), n1_projected)...)
+    index2 = promote_index(project(getindexes(t.t2), n2_projected)...)
 
-    return @inbounds _map(pred, t, index1, index2)
+    return @inbounds _map(pred, t_projected, index1, index2)
 end
 
 # Seperate the cases where we know we can or can't do some acceleration with the predicate
