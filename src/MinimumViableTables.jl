@@ -9,6 +9,7 @@ import Base: size, axes, getindex, setindex!, show, similar, copy, filter, map, 
 import LinearAlgebra: cross, ×
 
 using Indexing
+#using DataStreams
 
 export colnames, columns, getindexes, project, Project, addindex, rename, Rename
 
@@ -34,6 +35,8 @@ include("predicates.jl")
 
 include("custom_arrays.jl")
 include("producttable.jl")
+
+#include("datastreams.jl")
 
 end # module
 

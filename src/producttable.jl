@@ -43,7 +43,7 @@ function filter(pred::Predicate{names}, t::ProductTable{<:Any, <:Any, <:Abstract
     elseif _issubset(names, n2)
         return ProductTable(t.t1, filter(pred, t.t2))
     end
-    return @inbounds t[map(pred, t)] # Don't use map - requires N^2 memory and most joins are sparse
+    return @inbounds t[findall(pred, t)] # Don't use map - requires N^2 memory and most joins are sparse
 end
 
 # Map
@@ -53,7 +53,7 @@ function map(pred::Predicate{names}, t::ProductTable{<:Any, <:Any, <:AbstractVec
     if _issubset(names, n1)
         return ProductArray((x, y) -> x, map(pred, t.t1), Array{Nothing}(uninitialized, size(t.t2)))
     elseif _issubset(names, n2)
-        return ProductArray((x, y) -> y, Array{Nothing}(uninitialized, size(t.t1)), mao(pred, t.t2))
+        return ProductArray((x, y) -> y, Array{Nothing}(uninitialized, size(t.t1)), map(pred, t.t2))
     end
 
     n1_projected = _intersect(names, n1)
@@ -91,7 +91,7 @@ function _map(pred::Predicate, t::ProductTable, ::Any, ::Any)
     return out
 end
 
-# If the second table has no acceleration index, try switch the ordering
+# If the second table has no acceleration index, try switch the ordering (TODO is this a good idea? Should this be more predictable to the user?)
 function _map(pred::Predicate, t::ProductTable, ::Any, ::NoIndex) # Reverse looping order
     out = Array{Bool}(uninitialized, size(t))
     
@@ -110,4 +110,213 @@ end
 #     ...
 # end
 
-# TODO findall (should currently go via `map` by default...)
+# findall
+
+# First layer of dispatch seperates cases where predicate applies just to one part of the product table
+function findall(pred::Predicate{names}, t::ProductTable{<:Any, <:Any, <:AbstractVector{<:NamedTuple{n1}}, <:AbstractVector{<:NamedTuple{n2}}}) where {names, n1, n2}
+    if _issubset(names, n1)
+        return ProductArray((x, y) -> CartesianIndex(x, y), findall(pred, t.t1), keys(t.t2))
+    elseif _issubset(names, n2)
+        return ProductArray((x, y) -> CartesianIndex(x, y), keys(t.t1), findall(pred, t.t2))
+    end
+
+    n1_projected = _intersect(names, n1)
+    n2_projected = _intersect(names, n2)
+    names_projected = (n1_projected..., n2_projected...)
+
+    t_projected = project(t, names_projected)
+    index1 = promote_index(project(getindexes(t.t1), n1_projected)...)
+    index2 = promote_index(project(getindexes(t.t2), n2_projected)...)
+
+    return @inbounds _findall(pred, t_projected, index1, index2)
+end
+
+
+# Seperate the cases where we know we can or can't do some acceleration with the predicate
+function _findall(pred::Predicate, t::ProductTable, ::NoIndex, ::NoIndex)
+    return findall(row -> pred(row), t)
+end
+
+# Default to applying the accelerated filter to the second table
+function _findall(pred::Predicate, t::ProductTable, ::Any, index2::Any)
+    out = Vector{CartesianIndex{2}}()
+    
+    @inbounds for i in keys(t.t1) 
+        x = t.t1[i]
+        tmp = _findall(Predicate(pred, x), t.t2, index2)
+        for j in tmp # TODO: use a lazily-mapped append!, or something
+            push!(out, CartesianIndex(i, j))
+        end
+    end
+
+    return out
+end
+
+# If the second table has no acceleration index, try switch the ordering (TODO is this a good idea? Should this be more predictable to the user?)
+function _findall(pred::Predicate, t::ProductTable, index1::Any, ::NoIndex) # Reverse looping order
+    out = Vector{CartesianIndex{2}}()
+    
+    @inbounds for j in keys(t.t2)
+        x = t.t2[j]
+        tmp = map(Predicate(pred, x), t.t1)
+        for i in tmp # TODO: use a lazily-mapped append!, or something
+            push!(out, CartesianIndex(i, j))
+        end
+    end
+
+    return out
+end
+
+# Sort-merge join algorithm:
+
+function _findall(pred::IsEqual, t::ProductTable, index1::SortIndex, index2::SortIndex)
+    out = Vector{CartesianIndex{2}}()
+    if isempty(t)
+        return out
+    end
+    
+    @inbounds t1 = view(t.t1.data[1], index1.order) # a single column.
+    n1 = length(t1)
+    i1 = 1
+    @inbounds x1 = t.t1[1]
+
+    @inbounds t2 = view(t.t2.data[1], index2.order) # a single column.
+    n2 = length(t2)
+    i2 = 1
+    @inbounds x2 = t.t2[1]
+    
+    while i1 < n1 && i2 < n2
+        if isequal(x1, x2)
+            i1_last = searchsortedlast(t1, x1)
+            i2_last = searchsortedlast(t2, x2)
+            for j1 in i1:i1_last
+                for j2 in i2:i2_last
+                    @inbounds push!(out, CartesianIndex(index1.order[j1], index2.order[j2]))
+                end
+            end
+            i1 = i1_last + 1
+            i2 = i2_last + 1
+            @inbounds x1 = t1[i1]
+            @inbounds x2 = t2[i2]
+        elseif isless(x1, x2)
+            i1 = searchsortedfirst(t1, x2)
+            @inbounds x1 = t1[i1]
+        else
+            i2 = searchsortedfirst(t2, x1)
+            @inbounds x2 = t2[i2]
+        end
+    end
+
+    return out
+end
+
+function _findall(pred::IsEqual, t::ProductTable, index1::UniqueSortIndex, index2::SortIndex)
+    out = Vector{CartesianIndex{2}}()
+    if isempty(t)
+        return out
+    end
+    
+    @inbounds t1 = view(t.t1.data[1], index1.order) # a single column.
+    n1 = length(t1)
+    i1 = 1
+    @inbounds x1 = t1[1]
+
+    @inbounds t2 = view(t.t2.data[1], index2.order) # a single column.
+    n2 = length(t2)
+    i2 = 1
+    @inbounds x2 = t2[1]
+    
+    while i1 < n1 && i2 < n2
+        if isequal(x1, x2)
+            i2_last = searchsortedlast(t2, x2)
+            for j2 in i2:i2_last
+                @inbounds push!(out, CartesianIndex(index1.order[i1], index2.order[j2]))
+            end
+            i1 = i1 + 1
+            i2 = i2_last + 1
+            @inbounds x1 = t1[i1]
+            @inbounds x2 = t2[i2]
+        elseif isless(x1, x2)
+            i1 = searchsortedfirst(t1, x2)
+            @inbounds x1 = t1[i1]
+        else
+            i2 = searchsortedfirst(t2, x1)
+            @inbounds x2 = t2[i2]
+        end
+    end
+
+    return out
+end
+
+function _findall(pred::IsEqual, t::ProductTable, index1::SortIndex, index2::UniqueSortIndex)
+    out = Vector{CartesianIndex{2}}()
+    if isempty(t)
+        return out
+    end
+    
+    @inbounds t1 = view(t.t1.data[1], index1.order) # a single column.
+    n1 = length(t1)
+    i1 = 1
+    @inbounds x1 = t.t1[1]
+
+    @inbounds t2 = view(t.t2.data[1], index2.order) # a single column.
+    n2 = length(t2)
+    i2 = 1
+    @inbounds x2 = t.t2[1]
+    
+    while i1 < n1 && i2 < n2
+        if isequal(x1, x2)
+            i1_last = searchsortedlast(t1, x1)
+            for j1 in i1:i1_last
+                @inbounds push!(out, CartesianIndex(index1.order[j1], index2.order[i2]))
+            end
+            i1 = i1_last + 1
+            i2 = i2 + 1
+            @inbounds x1 = t1[i1]
+            @inbounds x2 = t2[i2]
+        elseif isless(x1, x2)
+            i1 = searchsortedfirst(t1, x2)
+            @inbounds x1 = t1[i1]
+        else
+            i2 = searchsortedfirst(t2, x1)
+            @inbounds x2 = t2[i2]
+        end
+    end
+
+    return out
+end
+
+function _findall(pred::IsEqual, t::ProductTable, index1::UniqueSortIndex, index2::UniqueSortIndex)
+    out = Vector{CartesianIndex{2}}()
+    if isempty(t)
+        return out
+    end
+    
+    @inbounds t1 = view(t.t1.data[1], index1.order) # a single column.
+    n1 = length(t1)
+    i1 = 1
+    @inbounds x1 = t.t1[1]
+
+    @inbounds t2 = view(t.t2.data[1], index2.order) # a single column.
+    n2 = length(t2)
+    i2 = 1
+    @inbounds x2 = t.t2[1]
+    
+    while i1 < n1 && i2 < n2
+        if isequal(x1, x2)
+            @inbounds push!(out, CartesianIndex(index1.order[i1], index2.order[i2]))
+            i1 = i1 + 1
+            i2 = i2 + 1
+            @inbounds x1 = t1[i1]
+            @inbounds x2 = t2[i2]
+        elseif isless(x1, x2)
+            i1 = searchsortedfirst(t1, x2)
+            @inbounds x1 = t1[i1]
+        else
+            i2 = searchsortedfirst(t2, x1)
+            @inbounds x2 = t2[i2]
+        end
+    end
+
+    return out
+end

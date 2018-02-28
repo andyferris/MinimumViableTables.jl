@@ -183,9 +183,9 @@ end
 function _findall(pred::IsEqual{names}, t::Table{names}, ::UniqueIndex) where {names}
     i = findfirst(pred, t)
     if i === nothing
-        return Int[]
+        return 1:0
     else
-        return Int[i]
+        return i:i
     end
 end
 
@@ -216,10 +216,10 @@ function _findall(pred::IsEqual{names}, t::Table{names}, index::UniqueSortIndex{
     @inbounds if first_greater_or_equal <= n
         i = index.order[first_greater_or_equal]
         if pred(t[i])
-            return Int[i]
+            return i:i
         end
     end
-    return Int[]
+    return 1:0
 end
 
 function _findall(pred::IsEqual{names}, t::Table{names}, index::UniqueSortIndex{names2}) where {names, names2}
@@ -230,10 +230,10 @@ function _findall(pred::IsEqual{names}, t::Table{names}, index::UniqueSortIndex{
     @inbounds if first_greater_or_equal <= n 
         i = index.order[first_greater_or_equal]
         if pred(t[i])
-            return Int[i]
+            return i:i
         end
     end
-    return Int[]
+    return 1:0
 end
 
 function _findall(pred::IsEqual{names}, t::Table{names}, index::HashIndex{names}) where {names}
@@ -254,9 +254,9 @@ function _findall(pred::IsEqual{names}, t::Table{names}, index::UniqueHashIndex{
     searchrow = pred.data
     i = get(() -> 0, index.dict, searchrow)
     if i > 0
-        return Int[i]
+        return i:i
     else
-        return Int[]
+        return 1:0
     end
 end
 
@@ -264,9 +264,9 @@ function _findall(pred::IsEqual{names}, t::Table{names}, index::UniqueHashIndex{
     searchrow = Tuple(Project(names2)(NamedTuple{names}(pred.data)))
     i = get(() -> 0, index.dict, searchrow)
     if i > 0 && @inbounds(pred(t[i]))
-        return Int[i]
+        return i:i
     else
-        return Int[]
+        return 1:0
     end
 end
 
