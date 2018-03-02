@@ -28,7 +28,7 @@ function Table{names}(nt::NamedTuple{names2, <:Tuple{Vararg{AbstractVector}}}, i
     end
 end
 
-colnames(::Table{names}) where {names} = names
+colnames(::AbstractArray{<:NamedTuple{names}}) where {names} = names
 columns(t::Table{names}) where {names} = NamedTuple{names}(t.data)
 
 getindexes(::AbstractVector{<:NamedTuple}) = ()
@@ -71,21 +71,6 @@ end
         @_propagate_inbounds_meta
         $(Expr(:block, exprs...))
         return v
-    end
-end
-
-function show(io::IO, ::MIME"text/plain", table::Table)
-    n = length(table)
-    n_index = length(getindexes(table))
-    println(io, "Table with $n $(n == 1 ? "row" : "rows") and $n_index acceleration $(n_index == 1 ? "index" : "indexes")")
-    for i = 1:min(n, 5)
-        print(io, " ", table[i])
-        if i != min(n, 5)
-            print(io, "\n")
-        end
-    end
-    if n > 5
-        print(io, "\n ...")
     end
 end
 
