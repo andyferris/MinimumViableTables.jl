@@ -20,8 +20,11 @@ colnames(::ProductTable{names}) where {names} = names
 #columns(t::ProductTable{names}) where {names} = NamedTuple{names}(map(name ->)
 #getindexes(t::ProductTable) = (getindexes(t.t1)..., getindexes(t.t2)...)
 
-@inline function project(t::ProductTable{<:Any, <:Any, <:AbstractVector{<:NamedTuple{n1}}, <:AbstractVector{<:NamedTuple{n2}}}, names::Tuple{Vararg{Symbol}}) where {n1, n2}
-    ProductTable(project(t.t1, _intersect(names, n1)), project(t.t2, _intersect(names, n2)))
+@inline function (p::Project{names})(t::ProductTable{<:Any, <:Any, <:AbstractVector{<:NamedTuple{n1}}, <:AbstractVector{<:NamedTuple{n2}}}) where {n1, n2, names}
+    p1 = Project{_intersect(names, n1)}()
+    p2 = Project{_intersect(names, n2)}()
+    # TODO ensure no other names left over
+    ProductTable(p1(t.t1), p2(t.t2))
 end
 
 @inline function (r::Rename{oldnames, newnames})(t::ProductTable{names}) where {oldnames, newnames, names}

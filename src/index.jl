@@ -3,12 +3,8 @@
 abstract type AbstractIndex{names}; end
 abstract type AbstractUniqueIndex{names} <: AbstractIndex{names}; end
 
-# IPO doesn't seem to like this :( We'll have to abondon that API for now... or add a bunch of methods to slurp for us...
-#@inline project(index::AbstractIndex{names}, n::Symbol...) where {names} = project(index, n)
-@inline project(index::AbstractIndex{names}, n::Symbol) where {names} = project(index, (n,))
-
 # By default, indices will be invalidated if some of the indexed columns are removed
-@inline function project(i::AbstractIndex{names}, n::Tuple{Vararg{Symbol}}) where names
+@inline function (::Project{n})(i::AbstractIndex{names}) where {names, n}
     if _issubset(names, n)
         return i
     else
@@ -42,7 +38,7 @@ function (::Rename{oldnames, newnames})(index::SortIndex{names}) where {oldnames
     return SortIndex{_rename(Val(oldnames), Val(newnames), Val(names))}(index.order)
 end
 
-@inline function project(i::SortIndex{names}, n::Tuple{Vararg{Symbol}}) where names
+@inline function (::Project{n})(i::SortIndex{names}) where {names, n}
     ns = _headsubset(names, n)
     if ns === ()
         return NoIndex()
@@ -62,7 +58,7 @@ function (::Rename{oldnames, newnames})(index::UniqueSortIndex{names}) where {ol
     return UniqueSortIndex{_rename(Val(oldnames), Val(newnames), Val(names))}(index.order)
 end
 
-@inline function project(i::UniqueSortIndex{names}, n::Tuple{Vararg{Symbol}}) where names
+@inline function (::Project{n})(i::UniqueSortIndex{names}) where {names, n}
     ns = _headsubset(names, n)
     if ns === ()
         return NoIndex()

@@ -83,10 +83,10 @@ function copy(t::Table{names}) where {names}
     return Table{names}(copy.(t.data), copy.(getindexes(t)))
 end
 
-@inline function project(t::Table, names::Tuple{Vararg{Symbol}})
-    data = getindices(NamedTuple{colnames(t)}(t.data), names)
-    indexes = project(getindexes(t), names)
-    return Table{names}(data, indexes)
+@inline function (p::Project{names})(t::Table) where {names}
+    data = p(columns(t))
+    indexes = p(getindexes(t))
+    return Table{names}(Tuple(data), indexes)
 end
 
 @inline function (r::Rename{oldnames, newnames})(t::Table{names}) where {oldnames, newnames, names}

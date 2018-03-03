@@ -1,19 +1,19 @@
 # Select a subset of columns 
 # TODO more general "select" with renaming, mapping, etc?
 
-function project end
-
 struct Project{names}
 end
 @inline Project(names::Tuple{Vararg{Symbol}}) = Project{names}()
 
-(::Project{names})(x) where {names} = project(x, names)
+@inline Project(n1::Symbol) = Project{(n1,)}()
+@inline Project(n1::Symbol, n2::Symbol) = Project{(n1, n2)}()
+@inline Project(n1::Symbol, n2::Symbol, n3::Symbol) = Project{(n1, n2, n3)}()
+@inline Project(n1::Symbol, n2::Symbol, n3::Symbol, n4::Symbol) = Project{(n1, n2, n3, n4)}()
+# TODO generalize this - constant propagation doesn't like slurping.
 
-@inline function project(nt::NamedTuple, names::Tuple{Vararg{Symbol}})
-    return _project(nt, Val(names))
-end
+@inline project(x, names::Tuple{Vararg{Symbol}}) = Project{names}()(x)
 
-@generated function _project(nt::NamedTuple{names}, ::Val{names2}) where {names, names2}
+@generated function (::Project{names2})(nt::NamedTuple{names}) where {names, names2}
     exprs = [:(getproperty(nt, $(Expr(:quote, n)))) for n in names2]
     return quote
         @_inline_meta

@@ -6,8 +6,8 @@ _clean(t, ts...) = (t, _clean(ts...)...)
 _clean(::NoIndex, ts...) = _clean(ts...)
 _clean() = ()
 
-function project(t::Tuple{Vararg{AbstractIndex}}, n::Tuple{Vararg{Symbol}})
-    return clean(map(Project(n), t))
+function (p::Project{n})(indexes::Tuple{Vararg{AbstractIndex}}) where {n}
+    return clean(map(p, indexes))
 end
 
 promote_index(indexes...) = promote_getindexes(indexes)
