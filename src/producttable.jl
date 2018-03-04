@@ -21,8 +21,8 @@ colnames(::ProductTable{names}) where {names} = names
 #getindexes(t::ProductTable) = (getindexes(t.t1)..., getindexes(t.t2)...)
 
 @inline function (p::Project{names})(t::ProductTable{<:Any, <:Any, <:AbstractVector{<:NamedTuple{n1}}, <:AbstractVector{<:NamedTuple{n2}}}) where {n1, n2, names}
-    p1 = Project{_intersect(names, n1)}()
-    p2 = Project{_intersect(names, n2)}()
+    p1 = Project{_intersect(Val(names), Val(n1))}()
+    p2 = Project{_intersect(Val(names), Val(n2))}()
     # TODO ensure no other names left over
     ProductTable(p1(t.t1), p2(t.t2))
 end
@@ -59,8 +59,8 @@ function map(pred::Predicate{names}, t::ProductTable{<:Any, <:Any, <:AbstractVec
         return ProductArray((x, y) -> y, Array{Nothing}(uninitialized, size(t.t1)), map(pred, t.t2))
     end
 
-    n1_projected = _intersect(names, n1)
-    n2_projected = _intersect(names, n2)
+    n1_projected = _intersect(Val(names), Val(n1))
+    n2_projected = _intersect(Val(names), Val(n2))
     names_projected = (n1_projected..., n2_projected...)
 
     t_projected = project(t, names_projected)
@@ -123,8 +123,8 @@ function findall(pred::Predicate{names}, t::ProductTable{<:Any, <:Any, <:Abstrac
         return ProductArray((x, y) -> CartesianIndex(x, y), keys(t.t1), findall(pred, t.t2))
     end
 
-    n1_projected = _intersect(names, n1)
-    n2_projected = _intersect(names, n2)
+    n1_projected = _intersect(Val(names), Val(n1))
+    n2_projected = _intersect(Val(names), Val(n2))
     names_projected = (n1_projected..., n2_projected...)
 
     t_projected = project(t, names_projected)
@@ -172,7 +172,7 @@ end
 
 # Sort-merge join algorithm:
 
-function _findall(pred::IsEqual, t::ProductTable, index1::SortIndex, index2::SortIndex)
+function _findall(pred::Equals, t::ProductTable, index1::SortIndex, index2::SortIndex)
     out = Vector{CartesianIndex{2}}()
     if isempty(t)
         return out
@@ -181,14 +181,14 @@ function _findall(pred::IsEqual, t::ProductTable, index1::SortIndex, index2::Sor
     @inbounds t1 = view(t.t1.data[1], index1.order) # a single column.
     n1 = length(t1)
     i1 = 1
-    @inbounds x1 = t.t1[1]
+    @inbounds x1 = t1[1]
 
     @inbounds t2 = view(t.t2.data[1], index2.order) # a single column.
     n2 = length(t2)
     i2 = 1
-    @inbounds x2 = t.t2[1]
+    @inbounds x2 = t2[1]
     
-    while i1 < n1 && i2 < n2
+    while i1 <= n1 && i2 <= n2
         if isequal(x1, x2)
             i1_last = searchsortedlast(t1, x1)
             i2_last = searchsortedlast(t2, x2)
@@ -213,7 +213,7 @@ function _findall(pred::IsEqual, t::ProductTable, index1::SortIndex, index2::Sor
     return out
 end
 
-function _findall(pred::IsEqual, t::ProductTable, index1::UniqueSortIndex, index2::SortIndex)
+function _findall(pred::Equals, t::ProductTable, index1::UniqueSortIndex, index2::SortIndex)
     out = Vector{CartesianIndex{2}}()
     if isempty(t)
         return out
@@ -229,7 +229,7 @@ function _findall(pred::IsEqual, t::ProductTable, index1::UniqueSortIndex, index
     i2 = 1
     @inbounds x2 = t2[1]
     
-    while i1 < n1 && i2 < n2
+    while i1 <= n1 && i2 <= n2
         if isequal(x1, x2)
             i2_last = searchsortedlast(t2, x2)
             for j2 in i2:i2_last
@@ -251,7 +251,7 @@ function _findall(pred::IsEqual, t::ProductTable, index1::UniqueSortIndex, index
     return out
 end
 
-function _findall(pred::IsEqual, t::ProductTable, index1::SortIndex, index2::UniqueSortIndex)
+function _findall(pred::Equals, t::ProductTable, index1::SortIndex, index2::UniqueSortIndex)
     out = Vector{CartesianIndex{2}}()
     if isempty(t)
         return out
@@ -260,14 +260,14 @@ function _findall(pred::IsEqual, t::ProductTable, index1::SortIndex, index2::Uni
     @inbounds t1 = view(t.t1.data[1], index1.order) # a single column.
     n1 = length(t1)
     i1 = 1
-    @inbounds x1 = t.t1[1]
+    @inbounds x1 = t1[1]
 
     @inbounds t2 = view(t.t2.data[1], index2.order) # a single column.
     n2 = length(t2)
     i2 = 1
-    @inbounds x2 = t.t2[1]
+    @inbounds x2 = t2[1]
     
-    while i1 < n1 && i2 < n2
+    while i1 <= n1 && i2 <= n2
         if isequal(x1, x2)
             i1_last = searchsortedlast(t1, x1)
             for j1 in i1:i1_last
@@ -289,7 +289,7 @@ function _findall(pred::IsEqual, t::ProductTable, index1::SortIndex, index2::Uni
     return out
 end
 
-function _findall(pred::IsEqual, t::ProductTable, index1::UniqueSortIndex, index2::UniqueSortIndex)
+function _findall(pred::Equals, t::ProductTable, index1::UniqueSortIndex, index2::UniqueSortIndex)
     out = Vector{CartesianIndex{2}}()
     if isempty(t)
         return out
@@ -298,14 +298,14 @@ function _findall(pred::IsEqual, t::ProductTable, index1::UniqueSortIndex, index
     @inbounds t1 = view(t.t1.data[1], index1.order) # a single column.
     n1 = length(t1)
     i1 = 1
-    @inbounds x1 = t.t1[1]
+    @inbounds x1 = t1[1]
 
     @inbounds t2 = view(t.t2.data[1], index2.order) # a single column.
     n2 = length(t2)
     i2 = 1
-    @inbounds x2 = t.t2[1]
+    @inbounds x2 = t2[1]
     
-    while i1 < n1 && i2 < n2
+    while i1 <= n1 && i2 <= n2
         if isequal(x1, x2)
             @inbounds push!(out, CartesianIndex(index1.order[i1], index2.order[i2]))
             i1 = i1 + 1

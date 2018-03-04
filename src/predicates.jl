@@ -318,7 +318,7 @@ end
 
 function _map(pred::IsLess{names}, t::Table{names}, index::SortIndex{names2}) where {names, names2}
     # Be careful about what index you accept - TODO perhaps `promote_index` needs to know the predicate rather than do this here
-    names3 = _headsubset(names, names2)
+    names3 = _headsubset(Val(names), Val(names2))
     if names3 === ()
         return _map(pred, t, NoIndex())
     elseif names3 !== names2
@@ -351,7 +351,7 @@ end
 
 function _map(pred::IsLess{names}, t::Table{names}, index::UniqueSortIndex{names2}) where {names, names2}
     # Be careful about what index you accept - TODO perhaps `promote_index` needs to know the predicate rather than do this here
-    names3 = _headsubset(names, names2)
+    names3 = _headsubset(Val(names), Val(names2))
     if names3 === ()
         return _map(pred, t, NoIndex())
     elseif names3 !== names2
@@ -383,7 +383,7 @@ end
 
 function _findall(pred::IsLess{names}, t::Table{names}, index::SortIndex{names2}) where {names, names2}
     # Be careful about what index you accept - TODO perhaps `promote_index` needs to know the predicate rather than do this here
-    names3 = _headsubset(names, names2)
+    names3 = _headsubset(Val(names), Val(names2))
     if names3 === ()
         return _findall(pred, t, NoIndex())
     elseif names3 !== names2
@@ -413,7 +413,7 @@ end
 
 function _findall(pred::IsLess{names}, t::Table{names}, index::UniqueSortIndex{names2}) where {names, names2}
     # Be careful about what index you accept - TODO perhaps `promote_index` needs to know the predicate rather than do this here
-    names3 = _headsubset(names, names2)
+    names3 = _headsubset(Val(names), Val(names2))
     if names3 === ()
         return _findall(pred, t, NoIndex())
     elseif names3 !== names2
@@ -469,7 +469,7 @@ end
 
 function _map(pred::IsLessEqual{names}, t::Table{names}, index::SortIndex{names2}) where {names, names2}
     # Be careful about what index you accept - TODO perhaps `promote_index` needs to know the predicate rather than do this here
-    names3 = _headsubset(names, names2)
+    names3 = _headsubset(Val(names), Val(names2))
     if names3 === ()
         return _map(pred, t, NoIndex())
     elseif names3 !== names2
@@ -502,7 +502,7 @@ end
 
 function _map(pred::IsLessEqual{names}, t::Table{names}, index::UniqueSortIndex{names2}) where {names, names2}
     # Be careful about what index you accept - TODO perhaps `promote_index` needs to know the predicate rather than do this here
-    names3 = _headsubset(names, names2)
+    names3 = _headsubset(Val(names), Val(names2))
     if names3 === ()
         return _map(pred, t, NoIndex())
     elseif names3 !== names2
@@ -534,7 +534,7 @@ end
 
 function _findall(pred::IsLessEqual{names}, t::Table{names}, index::SortIndex{names2}) where {names, names2}
     # Be careful about what index you accept - TODO perhaps `promote_index` needs to know the predicate rather than do this here
-    names3 = _headsubset(names, names2)
+    names3 = _headsubset(Val(names), Val(names2))
     if names3 === ()
         return _findall(pred, t, NoIndex())
     elseif names3 !== names2
@@ -564,7 +564,7 @@ end
 
 function _findall(pred::IsLessEqual{names}, t::Table{names}, index::UniqueSortIndex{names2}) where {names, names2}
     # Be careful about what index you accept - TODO perhaps `promote_index` needs to know the predicate rather than do this here
-    names3 = _headsubset(names, names2)
+    names3 = _headsubset(Val(names), Val(names2))
     if names3 === ()
         return _findall(pred, t, NoIndex())
     elseif names3 !== names2
@@ -618,7 +618,7 @@ end
 
 function _map(pred::IsGreater{names}, t::Table{names}, index::SortIndex{names2}) where {names, names2}
     # Be careful about what index you accept - TODO perhaps `promote_index` needs to know the predicate rather than do this here
-    names3 = _headsubset(names, names2)
+    names3 = _headsubset(Val(names), Val(names2))
     if names3 === ()
         return _map(pred, t, NoIndex())
     elseif names3 !== names2
@@ -651,7 +651,7 @@ end
 
 function _map(pred::IsGreater{names}, t::Table{names}, index::UniqueSortIndex{names2}) where {names, names2}
     # Be careful about what index you accept - TODO perhaps `promote_index` needs to know the predicate rather than do this here
-    names3 = _headsubset(names, names2)
+    names3 = _headsubset(Val(names), Val(names2))
     if names3 === ()
         return _map(pred, t, NoIndex())
     elseif names3 !== names2
@@ -683,7 +683,7 @@ end
 
 function _findall(pred::IsGreater{names}, t::Table{names}, index::SortIndex{names2}) where {names, names2}
     # Be careful about what index you accept - TODO perhaps `promote_index` needs to know the predicate rather than do this here
-    names3 = _headsubset(names, names2)
+    names3 = _headsubset(Val(names), Val(names2))
     if names3 === ()
         return _findall(pred, t, NoIndex())
     elseif names3 !== names2
@@ -714,7 +714,7 @@ end
 
 function _findall(pred::IsGreater{names}, t::Table{names}, index::UniqueSortIndex{names2}) where {names, names2}
     # Be careful about what index you accept - TODO perhaps `promote_index` needs to know the predicate rather than do this here
-    names3 = _headsubset(names, names2)
+    names3 = _headsubset(Val(names), Val(names2))
     if names3 === ()
         return _findall(pred, t, NoIndex())
     elseif names3 !== names2
@@ -768,7 +768,7 @@ end
 
 function _map(pred::IsGreaterEqual{names}, t::Table{names}, index::SortIndex{names2}) where {names, names2}
     # Be careful about what index you accept - TODO perhaps `promote_index` needs to know the predicate rather than do this here
-    names3 = _headsubset(names, names2)
+    names3 = _headsubset(Val(names), Val(names2))
     if names3 === ()
         return _map(pred, t, NoIndex())
     elseif names3 !== names2
@@ -801,7 +801,7 @@ end
 
 function _map(pred::IsGreaterEqual{names}, t::Table{names}, index::UniqueSortIndex{names2}) where {names, names2}
     # Be careful about what index you accept - TODO perhaps `promote_index` needs to know the predicate rather than do this here
-    names3 = _headsubset(names, names2)
+    names3 = _headsubset(Val(names), Val(names2))
     if names3 === ()
         return _map(pred, t, NoIndex())
     elseif names3 !== names2
@@ -833,7 +833,7 @@ end
 
 function _findall(pred::IsGreaterEqual{names}, t::Table{names}, index::SortIndex{names2}) where {names, names2}
     # Be careful about what index you accept - TODO perhaps `promote_index` needs to know the predicate rather than do this here
-    names3 = _headsubset(names, names2)
+    names3 = _headsubset(Val(names), Val(names2))
     if names3 === ()
         return _findall(pred, t, NoIndex())
     elseif names3 !== names2
@@ -864,7 +864,7 @@ end
 
 function _findall(pred::IsGreaterEqual{names}, t::Table{names}, index::UniqueSortIndex{names2}) where {names, names2}
     # Be careful about what index you accept - TODO perhaps `promote_index` needs to know the predicate rather than do this here
-    names3 = _headsubset(names, names2)
+    names3 = _headsubset(Val(names), Val(names2))
     if names3 === ()
         return _findall(pred, t, NoIndex())
     elseif names3 !== names2

@@ -29,7 +29,29 @@ end
     return out
 end
 
+@generated function _headsubset(::Val{a}, ::Val{b}) where {a, b}
+    out = ()
+    for s ∈ a
+        if s ∈ b
+            out = (out..., s)
+        else
+            return out
+        end
+    end
+    return out
+end
+
 @pure function _intersect(a::Tuple{Vararg{Symbol}}, b::Tuple{Vararg{Symbol}})
+    out = ()
+    for s ∈ a
+        if s ∈ b
+            out = (out..., s)
+        end
+    end
+    return out
+end
+
+@generated function _intersect(::Val{a}, ::Val{b}) where {a, b}
     out = ()
     for s ∈ a
         if s ∈ b

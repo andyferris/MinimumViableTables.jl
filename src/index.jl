@@ -39,7 +39,7 @@ function (::Rename{oldnames, newnames})(index::SortIndex{names}) where {oldnames
 end
 
 @inline function (::Project{n})(i::SortIndex{names}) where {names, n}
-    ns = _headsubset(names, n)
+    ns = _headsubset(Val(names), Val(n))
     if ns === ()
         return NoIndex()
     else # We retain lexicographical ordering
@@ -59,7 +59,7 @@ function (::Rename{oldnames, newnames})(index::UniqueSortIndex{names}) where {ol
 end
 
 @inline function (::Project{n})(i::UniqueSortIndex{names}) where {names, n}
-    ns = _headsubset(names, n)
+    ns = _headsubset(Val(names), Val(n))
     if ns === ()
         return NoIndex()
     elseif ns === names
