@@ -1172,7 +1172,7 @@ function Predicate(pred::GreaterEqualThan{names}, x::NamedTuple{names2}) where {
     if names[1] === names2[1]
         return IsLess(NamedTuple{(names[2],)}(Tuple(x)))
     elseif names[2] === names2[1]
-        return GreaterEqualThan(NamedTuple{(names[1],)}(Tuple(x)))
+        return IsGreaterEqual(NamedTuple{(names[1],)}(Tuple(x)))
     else
         error("Can't create conditional predicate from $pred and $x")
     end

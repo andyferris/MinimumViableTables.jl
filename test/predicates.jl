@@ -402,6 +402,9 @@
         @test map(pred, t) == [true, false, false]
         @test findall(pred, t) == [1]
         @test filter(pred, t) == Table(a = [2], b = [2])
+
+        @test Predicate(pred, (a=1,)) === IsEqual((b=1,))
+        @test Predicate(pred, (b=1,)) === IsEqual((a=1,))
     end
 
     @testset "LessThan" begin
@@ -422,6 +425,9 @@
         @test map(pred, t) == [false, false, true]
         @test findall(pred, t) == [3]
         @test filter(pred, t) == Table(a = [1], b = [3])
+
+        @test Predicate(pred, (a=1,)) === IsGreaterEqual((b=1,))
+        @test Predicate(pred, (b=1,)) === IsLess((a=1,))
     end
 
     @testset "LessEqualThan" begin
@@ -444,6 +450,9 @@
         @test map(pred, t) == [true, false, true]
         @test findall(pred, t) == [1, 3]
         @test filter(pred, t) == Table(a = [2, 1], b = [2, 3])
+
+        @test Predicate(pred, (a=1,)) === IsGreater((b=1,))
+        @test Predicate(pred, (b=1,)) === IsLessEqual((a=1,))
     end
 
     @testset "GreaterThan" begin
@@ -466,6 +475,9 @@
         @test map(pred, t) == [false, true, false]
         @test findall(pred, t) == [2]
         @test filter(pred, t) == Table(a = [3], b = [1])
+
+        @test Predicate(pred, (a=1,)) === IsLessEqual((b=1,))
+        @test Predicate(pred, (b=1,)) === IsGreater((a=1,))
     end
 
     @testset "GreaterEqualThan" begin
@@ -488,6 +500,9 @@
         @test map(pred, t) == [true, true, false]
         @test findall(pred, t) == [1, 2]
         @test filter(pred, t) == Table(a = [2, 3], b = [2, 1])
+
+        @test Predicate(pred, (a=1,)) === IsLess((b=1,))
+        @test Predicate(pred, (b=1,)) === IsGreaterEqual((a=1,))
     end
 
     @testset "Within" begin
@@ -512,5 +527,8 @@
         @test map(pred, t) == [true, false, false]
         @test findall(pred, t) == [1]
         @test filter(pred, t) == Table(a = [2], b = [2])
+
+        @test Predicate(pred, (a=1,)) === In((b=0..2,))
+        @test Predicate(pred, (b=1,)) === In((a=0..2,))
     end
 end

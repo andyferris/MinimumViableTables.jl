@@ -188,7 +188,7 @@ function _findall(pred::Equals, t::ProductTable, index1::SortIndex, index2::Sort
     i2 = 1
     @inbounds x2 = t2[1]
     
-    while i1 <= n1 && i2 <= n2
+    while true
         if isequal(x1, x2)
             i1_last = searchsortedlast(t1, x1)
             i2_last = searchsortedlast(t2, x2)
@@ -197,12 +197,12 @@ function _findall(pred::Equals, t::ProductTable, index1::SortIndex, index2::Sort
                     @inbounds push!(out, CartesianIndex(index1.order[j1], index2.order[j2]))
                 end
             end
-            i1 = i1_last + 1
-            i2 = i2_last + 1
+            i1 = i1_last + 1; if i1 > n1; break; end
+            i2 = i2_last + 1; if i2 > n2; break; end
             @inbounds x1 = t1[i1]
             @inbounds x2 = t2[i2]
         elseif isless(x1, x2)
-            i1 = searchsortedfirst(t1, x2)
+            i1 = searchsortedfirst(t1, x2); if i1 > n1; break; end
             @inbounds x1 = t1[i1]
         else
             i2 = searchsortedfirst(t2, x1)
@@ -229,21 +229,21 @@ function _findall(pred::Equals, t::ProductTable, index1::UniqueSortIndex, index2
     i2 = 1
     @inbounds x2 = t2[1]
     
-    while i1 <= n1 && i2 <= n2
+    while true
         if isequal(x1, x2)
             i2_last = searchsortedlast(t2, x2)
             for j2 in i2:i2_last
                 @inbounds push!(out, CartesianIndex(index1.order[i1], index2.order[j2]))
             end
-            i1 = i1 + 1
-            i2 = i2_last + 1
+            i1 = i1 + 1; if i1 > n1; break; end
+            i2 = i2_last + 1; if i2 > n2; break; end
             @inbounds x1 = t1[i1]
             @inbounds x2 = t2[i2]
         elseif isless(x1, x2)
-            i1 = searchsortedfirst(t1, x2)
+            i1 = searchsortedfirst(t1, x2); if i1 > n1; break; end
             @inbounds x1 = t1[i1]
         else
-            i2 = searchsortedfirst(t2, x1)
+            i2 = searchsortedfirst(t2, x1); if i2 > n2; break; end
             @inbounds x2 = t2[i2]
         end
     end
@@ -267,21 +267,21 @@ function _findall(pred::Equals, t::ProductTable, index1::SortIndex, index2::Uniq
     i2 = 1
     @inbounds x2 = t2[1]
     
-    while i1 <= n1 && i2 <= n2
+    while true
         if isequal(x1, x2)
             i1_last = searchsortedlast(t1, x1)
             for j1 in i1:i1_last
                 @inbounds push!(out, CartesianIndex(index1.order[j1], index2.order[i2]))
             end
-            i1 = i1_last + 1
-            i2 = i2 + 1
+            i1 = i1_last + 1; if i1 > n1; break; end
+            i2 = i2 + 1; if i2 > n2; break; end
             @inbounds x1 = t1[i1]
             @inbounds x2 = t2[i2]
         elseif isless(x1, x2)
-            i1 = searchsortedfirst(t1, x2)
+            i1 = searchsortedfirst(t1, x2); if i1 > n1; break; end
             @inbounds x1 = t1[i1]
         else
-            i2 = searchsortedfirst(t2, x1)
+            i2 = searchsortedfirst(t2, x1); if i2 > n2; break; end
             @inbounds x2 = t2[i2]
         end
     end
@@ -305,18 +305,18 @@ function _findall(pred::Equals, t::ProductTable, index1::UniqueSortIndex, index2
     i2 = 1
     @inbounds x2 = t2[1]
     
-    while i1 <= n1 && i2 <= n2
+    while true
         if isequal(x1, x2)
             @inbounds push!(out, CartesianIndex(index1.order[i1], index2.order[i2]))
-            i1 = i1 + 1
-            i2 = i2 + 1
+            i1 = i1 + 1; if i1 > n1; break; end
+            i2 = i2 + 1; if i2 > n2; break; end
             @inbounds x1 = t1[i1]
             @inbounds x2 = t2[i2]
         elseif isless(x1, x2)
-            i1 = searchsortedfirst(t1, x2)
+            i1 = searchsortedfirst(t1, x2); if i1 > n1; break; end
             @inbounds x1 = t1[i1]
         else
-            i2 = searchsortedfirst(t2, x1)
+            i2 = searchsortedfirst(t2, x1); if i2 > n2; break; end
             @inbounds x2 = t2[i2]
         end
     end
