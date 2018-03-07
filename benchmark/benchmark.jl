@@ -49,6 +49,18 @@ join_times_merge_unique2 = zeros(n_ns)
 join_times_merge_unique12 = zeros(n_ns)
 join_times_df = zeros(n_ns)
 
+index_times_sort_section = zeros(n_ns)
+index_times_uniquesort_section = zeros(n_ns)
+index_times_hash_section = zeros(n_ns)
+index_times_uniquehash_section = zeros(n_ns)
+
+index_times_sort_id = zeros(n_ns)
+index_times_uniquesort_id = zeros(n_ns)
+index_times_sort_id2 = zeros(n_ns)
+index_times_uniquesort_id2 = zeros(n_ns)
+index_times_hash_id2 = zeros(n_ns)
+index_times_uniquehash_id2 = zeros(n_ns)
+
 function select_column(t)
     Project{(:score_1,)}()(t)
 end
@@ -65,6 +77,24 @@ for (i, n) in enumerate(ns)
     df_a = DataFrame(; columns(t_a)...)
     df_b = DataFrame(; columns(t_b)...)
     rename!(df_b, :id2 => :id)
+
+    index_times_sort_section[i] = median((@benchmark addindex($t_a, $(SortIndex{(:section,)}))).times) * 1e-9
+    println("Sort by section: t = $(printtime(index_times_sort_section[i]*1e9))")
+    index_times_hash_section[i] = median(@benchmark(addindex($t_a, $(HashIndex{(:section,)}))).times) * 1e-9
+    println("Hash by section: t = $(printtime(index_times_hash_section[i]*1e9))")
+
+    index_times_sort_id[i] = median(@benchmark(addindex($t_a, $(SortIndex{(:id,)}))).times) * 1e-9
+    println("Sort by id: t = $(printtime(index_times_sort_id[i]*1e9))")
+    index_times_uniquesort_id[i] = median(@benchmark(addindex($t_a, $(UniqueSortIndex{(:id,)}))).times) * 1e-9
+    println("Unique sort by id: t = $(printtime(index_times_uniquesort_id[i]*1e9))")
+    index_times_sort_id2[i] = median(@benchmark(addindex($t_b, $(SortIndex{(:id2,)}))).times) * 1e-9
+    println("Sort by id2: t = $(printtime(index_times_sort_id2[i]*1e9))")
+    index_times_uniquesort_id2[i] = median(@benchmark(addindex($t_b, $(UniqueSortIndex{(:id2,)}))).times) * 1e-9
+    println("Unique sort by id2: t = $(printtime(index_times_uniquesort_id2[i]*1e9))")
+    index_times_hash_id2[i] = median((@benchmark addindex($t_b, $(HashIndex{(:id2,)}))).times) * 1e-9
+    println("Hash by id2: t = $(printtime(index_times_hash_id2[i]*1e9))")
+    index_times_uniquehash_id2[i] = median(@benchmark(addindex($t_b, $(UniqueHashIndex{(:id2,)}))).times) * 1e-9
+    println("Unique hash by id2: t = $(printtime(index_times_uniquehash_id2[i]*1e9))")
 
     bm = @benchmark select_column($t_a)
     time_ns = median(bm.times)

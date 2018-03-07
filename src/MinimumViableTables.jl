@@ -31,7 +31,7 @@ include("rename.jl")
 include("index.jl")
 include("indices.jl")
 include("table.jl")
-include("makeindex.jl")
+include("addindex.jl")
 include("predicates.jl")
 
 include("custom_arrays.jl")
