@@ -14,6 +14,7 @@ include("project.jl")
 include("rename.jl")
 include("index.jl")
 include("table.jl")
+include("rowoperations.jl")
 include("makeindex.jl")
 include("predicates.jl")
 

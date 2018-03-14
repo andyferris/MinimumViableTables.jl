@@ -120,7 +120,7 @@ function showtable(io::IO, @nospecialize t)
 
     ncols_shown = min(ncols+1, max_cols)::Int # First "column" shown is the indices
 
-    strings = Vector{Vector{String}}(uninitialized, ncols_shown)
+    strings = Vector{Vector{String}}(undef, ncols_shown)
     for i ∈ 1:ncols_shown
         for j ∈ 1:(min(max_show_rows, nrows) + 1)
             if j == 1

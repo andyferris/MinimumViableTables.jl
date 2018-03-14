@@ -69,6 +69,9 @@ end
     exprs = [:(t.data[$j][i] = getproperty(v, $(Expr(:quote, names[j])))) for j = 1:length(names)]
     return quote
         @_propagate_inbounds_meta
+        if getindexes(t) !== ()
+            error("Mutating tables with acceleration indexes currently unsupported")
+        end
         $(Expr(:block, exprs...))
         return v
     end

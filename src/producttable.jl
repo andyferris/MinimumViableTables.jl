@@ -54,9 +54,9 @@ end
 # First layer of dispatch seperates cases where predicate applies just to one part of the product table
 function map(pred::Predicate{names}, t::ProductTable{<:Any, <:Any, <:AbstractVector{<:NamedTuple{n1}}, <:AbstractVector{<:NamedTuple{n2}}}) where {names, n1, n2}
     if _issubset(names, n1)
-        return ProductArray((x, y) -> x, map(pred, t.t1), Array{Nothing}(uninitialized, size(t.t2)))
+        return ProductArray((x, y) -> x, map(pred, t.t1), Array{Nothing}(undef, size(t.t2)))
     elseif _issubset(names, n2)
-        return ProductArray((x, y) -> y, Array{Nothing}(uninitialized, size(t.t1)), map(pred, t.t2))
+        return ProductArray((x, y) -> y, Array{Nothing}(undef, size(t.t1)), map(pred, t.t2))
     end
 
     n1_projected = _intersect(Val(names), Val(n1))
@@ -72,7 +72,7 @@ end
 
 # Seperate the cases where we know we can or can't do some acceleration with the predicate
 function _map(pred::Predicate, t::ProductTable, ::NoIndex, ::NoIndex)
-    out = Array{Bool}(uninitialized, size(t))
+    out = Array{Bool}(undef, size(t))
 
     @inbounds for i in keys(t)
         out[i] = pred(t[i])
@@ -83,7 +83,7 @@ end
 
 # Default to applying the accelerated filter to the second table
 function _map(pred::Predicate, t::ProductTable, ::Any, ::Any)
-    out = Array{Bool}(uninitialized, size(t))
+    out = Array{Bool}(undef, size(t))
     
     @inbounds for i in keys(t.t1) 
         x = t.t1[i]
@@ -96,7 +96,7 @@ end
 
 # If the second table has no acceleration index, try switch the ordering (TODO is this a good idea? Should this be more predictable to the user?)
 function _map(pred::Predicate, t::ProductTable, ::Any, ::NoIndex) # Reverse looping order
-    out = Array{Bool}(uninitialized, size(t))
+    out = Array{Bool}(undef, size(t))
     
     @inbounds for i in keys(t.t2)
         x = t.t2[i]

@@ -33,7 +33,7 @@ end
 function _groupinds(t::Table{names, T}, index::UniqueHashIndex{names}) where {names, T}
     d = index.dict
 
-    values = Vector{Vector{Int}}(uninitialized, length(d.values)) # Need SVector{1, Int} or something similarly fast
+    values = Vector{Vector{Int}}(undef, length(d.values)) # Need SVector{1, Int} or something similarly fast
 
     @inbounds begin
         i = start(d)

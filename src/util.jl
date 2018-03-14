@@ -80,7 +80,7 @@ end
 end
 
 @generated function _makevectors(::Type{Ts}, dims::Tuple{Int}) where {Ts <: Tuple}
-    exprs = [:(Vector{$T}(uninitialized, dims)) for T ∈ Ts.parameters]
+    exprs = [:(Vector{$T}(undef, dims)) for T ∈ Ts.parameters]
     return quote
         @_inline_meta
         return tuple($(exprs...))
