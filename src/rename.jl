@@ -25,7 +25,7 @@ end
     end
 
     out = map(names::Tuple{Vararg{Symbol}}) do n
-        i = findfirst(equalto(n), oldnames)
+        i = findfirst(==(n), oldnames)
         return i === nothing ? n : newnames[i]
     end
 

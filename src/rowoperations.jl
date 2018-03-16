@@ -73,4 +73,60 @@ function Base.prepend!(t1::Table{names}, t2::Table{names}) where {names}
     return t1
 end
 
-# TODO deleteat!, insert!, splice!
+function Base.deleteat!(t::Table, i)
+    if getindexes(t) !== ()
+        error("Mutating tables with acceleration indexes currently unsupported")
+    end
+    map(col -> deleteat!(col, i), columns(t))
+    return t
+end
+
+function Base.insert!(t::Table{names}, i, row::NamedTuple{names}) where {names}
+    if getindexes(t) !== ()
+        error("Mutating tables with acceleration indexes currently unsupported")
+    end
+    map((col, value) -> insert!(col, i, value), columns(t), row)
+    return t
+end
+
+function Base.splice!(t::Table, index::Integer)
+    if getindexes(t) !== ()
+        error("Mutating tables with acceleration indexes currently unsupported")
+    end
+    return map(col -> splice!(col, index), columns(t))
+end
+
+function Base.splice!(t::Table{names}, index::Integer, row::NamedTuple{names}) where {names}
+    if getindexes(t) !== ()
+        error("Mutating tables with acceleration indexes currently unsupported")
+    end
+    return map((col, value) -> splice!(col, index, value), columns(t), row)
+end
+
+function Base.splice!(t::Table{names}, index::Integer, t2::Table{names}) where {names}
+    if getindexes(t) !== ()
+        error("Mutating tables with acceleration indexes currently unsupported")
+    end
+    return map((col, values) -> splice!(col, index, values), columns(t), columns(t2))
+end
+
+function Base.splice!(t::Table, inds::UnitRange)
+    if getindexes(t) !== ()
+        error("Mutating tables with acceleration indexes currently unsupported")
+    end
+    return Table(map(col -> splice!(col, inds), columns(t)))
+end
+
+function Base.splice!(t::Table{names}, inds::UnitRange, row::NamedTuple{names}) where {names}
+    if getindexes(t) !== ()
+        error("Mutating tables with acceleration indexes currently unsupported")
+    end
+    return Table(map((col, value) -> splice!(col, inds, value), columns(t), row))
+end
+
+function Base.splice!(t::Table{names}, inds::UnitRange, t2::Table{names}) where {names}
+    if getindexes(t) !== ()
+        error("Mutating tables with acceleration indexes currently unsupported")
+    end
+    return Table(map((col, values) -> splice!(col, inds, values), columns(t), columns(t2)))
+end

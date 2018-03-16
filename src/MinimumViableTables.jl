@@ -4,7 +4,7 @@ using Base: @pure, @propagate_inbounds, @_propagate_inbounds_meta, @_inline_meta
             getproperty
 
 import Base: size, axes, getindex, setindex!, show, similar, copy, filter, map, findall,
-             getproperty, in
+             getproperty, in, broadcast, map
 
 import LinearAlgebra: cross, ×
 
@@ -32,6 +32,7 @@ include("index.jl")
 include("indices.jl")
 include("table.jl")
 include("rowoperations.jl")
+include("columnoperations.jl")
 include("addindex.jl")
 include("predicates.jl")
 
