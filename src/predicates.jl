@@ -8,7 +8,7 @@ abstract type Predicate{names} <: Function; end # Intention to add `!`, `&`, `|`
 function map(pred::Predicate{names}, t::Table) where {names}
     # First get the indices using the acceleration indices
     t_projected = Project(names)(t)
-    index = promote_index(getindexes(t_projected)...)
+    index = promote_index(accelerators(t_projected)...)
     return _map(pred, t_projected, index)
 end
 
@@ -19,7 +19,7 @@ end
 function findall(pred::Predicate{names}, t::Table) where {names}
     # First get the indices using the acceleration indices
     t_projected = Project(names)(t)
-    index = promote_index(getindexes(t_projected)...)
+    index = promote_index(accelerators(t_projected)...)
     return _findall(pred, t_projected, index)
 end
 
@@ -30,7 +30,7 @@ end
 function filter(pred::Predicate{names}, t::Table) where {names}
     # First get the indices using the acceleration indices
     t_projected = Project(names)(t)
-    index = promote_index(getindexes(t_projected)...)
+    index = promote_index(accelerators(t_projected)...)
     inds = _filter_indices(pred, t_projected, index) # Uses `map` or `findall` depending on available acceleration indices
     @inbounds return t[inds]
 end

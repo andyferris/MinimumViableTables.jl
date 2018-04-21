@@ -11,7 +11,7 @@ end
 function map(::typeof(merge), t1::Table, t2::Table)
     # TODO merge can overwrite a column. Need to invalidate the appropriate acceleration
     # indexes in this case
-    return Table(merge(columns(t1), columns(t2)), (getindexes(t1)..., getindexes(t2)...))
+    return Table(merge(columns(t1), columns(t2)), (accelerators(t1)..., accelerators(t2)...))
 end
 
 # TODO broadcast/map Project (and stop doing autovectorization?)

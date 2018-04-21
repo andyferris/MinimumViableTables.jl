@@ -78,22 +78,22 @@ for (i, n) in enumerate(ns)
     df_b = DataFrame(; columns(t_b)...)
     rename!(df_b, :id2 => :id)
 
-    index_times_sort_section[i] = median((@benchmark addindex($t_a, $(SortIndex{(:section,)}))).times) * 1e-9
+    index_times_sort_section[i] = median((@benchmark accelerate($t_a, $(SortIndex{(:section,)}))).times) * 1e-9
     println("Sort by section: t = $(printtime(index_times_sort_section[i]*1e9))")
-    index_times_hash_section[i] = median(@benchmark(addindex($t_a, $(HashIndex{(:section,)}))).times) * 1e-9
+    index_times_hash_section[i] = median(@benchmark(accelerate($t_a, $(HashIndex{(:section,)}))).times) * 1e-9
     println("Hash by section: t = $(printtime(index_times_hash_section[i]*1e9))")
 
-    index_times_sort_id[i] = median(@benchmark(addindex($t_a, $(SortIndex{(:id,)}))).times) * 1e-9
+    index_times_sort_id[i] = median(@benchmark(accelerate($t_a, $(SortIndex{(:id,)}))).times) * 1e-9
     println("Sort by id: t = $(printtime(index_times_sort_id[i]*1e9))")
-    index_times_uniquesort_id[i] = median(@benchmark(addindex($t_a, $(UniqueSortIndex{(:id,)}))).times) * 1e-9
+    index_times_uniquesort_id[i] = median(@benchmark(accelerate($t_a, $(UniqueSortIndex{(:id,)}))).times) * 1e-9
     println("Unique sort by id: t = $(printtime(index_times_uniquesort_id[i]*1e9))")
-    index_times_sort_id2[i] = median(@benchmark(addindex($t_b, $(SortIndex{(:id2,)}))).times) * 1e-9
+    index_times_sort_id2[i] = median(@benchmark(accelerate($t_b, $(SortIndex{(:id2,)}))).times) * 1e-9
     println("Sort by id2: t = $(printtime(index_times_sort_id2[i]*1e9))")
-    index_times_uniquesort_id2[i] = median(@benchmark(addindex($t_b, $(UniqueSortIndex{(:id2,)}))).times) * 1e-9
+    index_times_uniquesort_id2[i] = median(@benchmark(accelerate($t_b, $(UniqueSortIndex{(:id2,)}))).times) * 1e-9
     println("Unique sort by id2: t = $(printtime(index_times_uniquesort_id2[i]*1e9))")
-    index_times_hash_id2[i] = median((@benchmark addindex($t_b, $(HashIndex{(:id2,)}))).times) * 1e-9
+    index_times_hash_id2[i] = median((@benchmark accelerate($t_b, $(HashIndex{(:id2,)}))).times) * 1e-9
     println("Hash by id2: t = $(printtime(index_times_hash_id2[i]*1e9))")
-    index_times_uniquehash_id2[i] = median(@benchmark(addindex($t_b, $(UniqueHashIndex{(:id2,)}))).times) * 1e-9
+    index_times_uniquehash_id2[i] = median(@benchmark(accelerate($t_b, $(UniqueHashIndex{(:id2,)}))).times) * 1e-9
     println("Unique hash by id2: t = $(printtime(index_times_uniquehash_id2[i]*1e9))")
 
     bm = @benchmark select_column($t_a)
@@ -110,7 +110,7 @@ for (i, n) in enumerate(ns)
     t_a_sorted = Table(columns(t_a), (SortIndex{(:section,)}(perm),))
     tmp = t_a[perm]
     t_a_primary_sorted = Table(columns(tmp), (SortIndex{(:section,)}(Base.OneTo(n)),))
-    t_a_hashed = addindex(t_a, HashIndex{(:section,)})
+    t_a_hashed = accelerate(t_a, HashIndex{(:section,)})
 
     n = length(filter(IsEqual(section = 'A'), t_a))
     global bm = @benchmark filter($(IsEqual(section = 'A')), $t_a)
@@ -154,7 +154,7 @@ for (i, n) in enumerate(ns)
     groupreduce_times_df[i] = time_ns * 1e-9
     println("Group reduction (DataFrame): t = $(printtime(time_ns)) ($n groups)")
 
-    t_b_sorted = addindex(t_b, SortIndex{(:id2,)})
+    t_b_sorted = accelerate(t_b, SortIndex{(:id2,)})
     t_product_sorted = ProductTable(t_a, t_b_sorted)
     n = length(filter(Equals{(:id, :id2)}(), t_product_sorted))
     bm = @benchmark filter($(Equals{(:id, :id2)}()), $t_product_sorted)
@@ -162,7 +162,7 @@ for (i, n) in enumerate(ns)
     join_times_sorted[i] = time_ns * 1e-9
     println("Join (sort): t = $(printtime(time_ns)) ($n rows)")
 
-    t_b_unique_sorted = addindex(t_b, UniqueSortIndex{(:id2,)})
+    t_b_unique_sorted = accelerate(t_b, UniqueSortIndex{(:id2,)})
     t_product_unique_sorted = ProductTable(t_a, t_b_unique_sorted)
     n = length(filter(Equals{(:id, :id2)}(), t_product_unique_sorted))
     global bm = @benchmark filter($(Equals{(:id, :id2)}()), $t_product_unique_sorted)
@@ -170,7 +170,7 @@ for (i, n) in enumerate(ns)
     join_times_unique_sorted[i] = time_ns * 1e-9
     println("Join (unique sort): t = $(printtime(time_ns)) ($n rows)")
 
-    t_b_hashed = addindex(t_b, HashIndex{(:id2,)})
+    t_b_hashed = accelerate(t_b, HashIndex{(:id2,)})
     t_product_hashed = ProductTable(t_a, t_b_hashed)
     n = length(filter(Equals{(:id, :id2)}(), t_product_hashed))
     global bm = @benchmark filter($(Equals{(:id, :id2)}()), $t_product_hashed)
@@ -178,7 +178,7 @@ for (i, n) in enumerate(ns)
     join_times_hashed[i] = time_ns * 1e-9
     println("Join (hash): t = $(printtime(time_ns)) ($n rows)")
 
-    t_b_unique_hashed = addindex(t_b, UniqueHashIndex{(:id2,)})
+    t_b_unique_hashed = accelerate(t_b, UniqueHashIndex{(:id2,)})
     t_product_unique_hashed = ProductTable(t_a, t_b_unique_hashed)
     n = length(filter(Equals{(:id, :id2)}(), t_product_unique_hashed))
     global bm = @benchmark filter($(Equals{(:id, :id2)}()), $t_product_unique_hashed)
@@ -186,7 +186,7 @@ for (i, n) in enumerate(ns)
     join_times_unique_hashed[i] = time_ns * 1e-9
     println("Join (unique hash): t = $(printtime(time_ns)) ($n rows)")
 
-    t_a_merge = addindex(t_a, SortIndex{(:id,)})
+    t_a_merge = accelerate(t_a, SortIndex{(:id,)})
     t_product_merge = ProductTable(t_a_merge, t_b_sorted)
     n = length(filter(Equals{(:id, :id2)}(), t_product_merge))
     global bm = @benchmark filter($(Equals{(:id, :id2)}()), $t_product_merge)
@@ -194,7 +194,7 @@ for (i, n) in enumerate(ns)
     join_times_merge[i] = time_ns * 1e-9
     println("Join (merge): t = $(printtime(time_ns)) ($n rows)")
 
-    t_a_merge_unique = addindex(t_a, UniqueSortIndex{(:id,)})
+    t_a_merge_unique = accelerate(t_a, UniqueSortIndex{(:id,)})
     t_product_merge_unique1 = ProductTable(t_a_merge_unique, t_b_sorted)
     n = length(filter(Equals{(:id, :id2)}(), t_product_merge_unique1))
     global bm = @benchmark filter($(Equals{(:id, :id2)}()), $t_product_merge_unique1)

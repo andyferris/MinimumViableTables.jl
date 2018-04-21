@@ -108,12 +108,12 @@ function showtable(io::IO, @nospecialize t)
 
     n_indexes = 0
     if t isa Table
-        n_indexes = length(getindexes(t))
+        n_indexes = length(accelerators(t))
     elseif t isa ProductTable
-        n_indexes = length(getindexes(t.t1)) + length(getindexes(t.t2))
+        n_indexes = length(accelerators(t.t1)) + length(accelerators(t.t2))
     end
     if n_indexes > 0
-        print(io, " and $n_indexes acceleration index$(n_indexes == 1 ? "" : "es")")
+        print(io, " and $n_indexes accelerator$(n_indexes == 1 ? "" : "s")")
     end
 
     max_show_rows = displaysize(io)[1] - 7

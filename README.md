@@ -69,10 +69,10 @@ the knowledge that the values in one or more columns is unique.
 An acceleration index provides information about one-or-more columns of a `Table` to allow
 for fast lookup of relevant rows. These indexes may accelerate operations such as filtering
 rows, performing grouping and aggregates, or joins with other tables, and are typically 
-attached to a `Table` with the `addindex` function like so:
+attached to a `Table` with the `accelerate` function like so:
 
 ```julia
-table2 = addindex(table, HashIndex{(:a,)})
+table2 = accelerate(table, HashIndex{(:a,)})
 ```
 
 Multiple indexes may be attached to a single `Table`. The built-in set of `AbstractIndex`es

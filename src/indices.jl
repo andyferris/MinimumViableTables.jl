@@ -6,14 +6,14 @@ _clean(t, ts...) = (t, _clean(ts...)...)
 _clean(::NoIndex, ts...) = _clean(ts...)
 _clean() = ()
 
-function (p::Project{n})(indexes::Tuple{Vararg{AbstractIndex}}) where {n}
-    return clean(map(p, indexes))
+function (p::Project{n})(accelerators::Tuple{Vararg{AbstractIndex}}) where {n}
+    return clean(map(p, accelerators))
 end
 
-promote_index(indexes...) = promote_getindexes(indexes)
-promote_getindexes(t::Tuple{Vararg{AbstractIndex}}) = t[1]
-promote_getindexes(t::Tuple{}) = NoIndex()
+promote_index(accelerators...) = promote_accelerators(accelerators)
+promote_accelerators(t::Tuple{Vararg{AbstractIndex}}) = t[1]
+promote_accelerators(t::Tuple{}) = NoIndex()
 
-@inline function (r::Rename{oldnames, newnames})(indexes::Tuple{Vararg{AbstractIndex}}) where {oldnames, newnames}
-    map(r, indexes)
+@inline function (r::Rename{oldnames, newnames})(accelerators::Tuple{Vararg{AbstractIndex}}) where {oldnames, newnames}
+    map(r, accelerators)
 end

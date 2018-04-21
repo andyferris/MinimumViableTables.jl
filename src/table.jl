@@ -1,8 +1,8 @@
 # A table presents itself as a vector of named tuple
 
-struct Table{names, T <: NamedTuple{names}, Vs <: Tuple{Vararg{AbstractVector}}, Is <: Tuple{Vararg{AbstractIndex}}} <: AbstractVector{T}
+struct Table{names, T <: NamedTuple{names}, Vs <: Tuple{Vararg{AbstractVector}}, As <: Tuple{Vararg{AbstractIndex}}} <: AbstractVector{T}
     data::Vs
-    indexes::Is
+    accelerators::As
 end
 
 Table(;kwargs...) = Table(kwargs.data) # TODO `index` keyword argument?
@@ -29,8 +29,8 @@ function Table{names}(nt::NamedTuple{names2, <:Tuple{Vararg{AbstractVector}}}, i
 end
 
 # Helpers to get the data directly from the Table struct
-getindexes(::AbstractVector{<:NamedTuple}) = ()
-getindexes(t::Table) = Core.getfield(t, :indexes)
+accelerators(::AbstractVector{<:NamedTuple}) = ()
+accelerators(t::Table) = Core.getfield(t, :accelerators)
 getdata(t::Table) = Core.getfield(t, :data)
 
 # Simple column access via `table.columnname`
@@ -74,7 +74,7 @@ end
     exprs = [:(getdata(t)[$j][i] = getproperty(v, $(Expr(:quote, names[j])))) for j = 1:length(names)]
     return quote
         @_propagate_inbounds_meta
-        if getindexes(t) !== ()
+        if accelerators(t) !== ()
             error("Mutating tables with acceleration indexes currently unsupported")
         end
         $(Expr(:block, exprs...))
@@ -88,16 +88,16 @@ function similar(t::Table, ::Type{NamedTuple{names, Ts}}, dims::Tuple{Int}) wher
 end
 
 function copy(t::Table{names}) where {names}
-    return Table{names}(copy.(getdata(t)), copy.(getindexes(t)))
+    return Table{names}(copy.(getdata(t)), copy.(accelerators(t)))
 end
 
 @inline function (p::Project{names})(t::Table) where {names}
     data = p(columns(t))
-    indexes = p(getindexes(t))
+    indexes = p(accelerators(t))
     return Table{names}(Tuple(data), indexes)
 end
 
 @inline function (r::Rename{oldnames, newnames})(t::Table{names}) where {oldnames, newnames, names}
     names2 = _rename(Val(oldnames), Val(newnames), Val(names))
-    return Table{names2}(getdata(t), r(getfield(t, :indexes)))
+    return Table{names2}(getdata(t), r(accelerators(t)))
 end

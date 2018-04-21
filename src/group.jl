@@ -11,7 +11,7 @@ function groupinds(by::Project{n}, t::Table{names}) where {n, names}
 end
 
 function groupinds(by::Project{names}, t::Table{names}) where {names}
-    _groupinds(t, promote_index(getindexes(t)...))
+    _groupinds(t, promote_index(accelerators(t)...))
 end
     
 function _groupinds(t::Table{names, T}, ::AbstractIndex) where {names, T}

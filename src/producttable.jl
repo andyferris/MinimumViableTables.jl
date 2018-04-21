@@ -18,7 +18,7 @@ end
 
 colnames(::ProductTable{names}) where {names} = names
 #columns(t::ProductTable{names}) where {names} = NamedTuple{names}(map(name ->)
-#getindexes(t::ProductTable) = (getindexes(t.t1)..., getindexes(t.t2)...)
+#accelerators(t::ProductTable) = (accelerators(t.t1)..., accelerators(t.t2)...)
 
 @inline function (p::Project{names})(t::ProductTable{<:Any, <:Any, <:AbstractVector{<:NamedTuple{n1}}, <:AbstractVector{<:NamedTuple{n2}}}) where {n1, n2, names}
     p1 = Project{_intersect(Val(names), Val(n1))}()
@@ -64,8 +64,8 @@ function map(pred::Predicate{names}, t::ProductTable{<:Any, <:Any, <:AbstractVec
     names_projected = (n1_projected..., n2_projected...)
 
     t_projected = project(t, names_projected)
-    index1 = promote_index(project(getindexes(t.t1), n1_projected)...)
-    index2 = promote_index(project(getindexes(t.t2), n2_projected)...)
+    index1 = promote_index(project(accelerators(t.t1), n1_projected)...)
+    index2 = promote_index(project(accelerators(t.t2), n2_projected)...)
 
     return @inbounds _map(pred, t_projected, index1, index2)
 end
@@ -128,8 +128,8 @@ function findall(pred::Predicate{names}, t::ProductTable{<:Any, <:Any, <:Abstrac
     names_projected = (n1_projected..., n2_projected...)
 
     t_projected = project(t, names_projected)
-    index1 = promote_index(project(getindexes(t.t1), n1_projected)...)
-    index2 = promote_index(project(getindexes(t.t2), n2_projected)...)
+    index1 = promote_index(project(accelerators(t.t1), n1_projected)...)
+    index2 = promote_index(project(accelerators(t.t2), n2_projected)...)
 
     return @inbounds _findall(pred, t_projected, index1, index2)
 end

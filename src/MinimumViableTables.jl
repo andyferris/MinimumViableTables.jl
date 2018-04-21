@@ -12,7 +12,7 @@ using Unicode
 using Indexing
 #using DataStreams
 
-export colnames, columns, getindexes, project, Project, addindex, rename, Rename
+export colnames, columns, accelerators, project, Project, accelerate, rename, Rename
 
 export AbstractIndex, AbstractUniqueIndex, NoIndex, UniqueIndex, HashIndex, UniqueHashIndex,
        SortIndex, UniqueSortIndex
@@ -33,7 +33,7 @@ include("indices.jl")
 include("table.jl")
 include("rowoperations.jl")
 include("columnoperations.jl")
-include("addindex.jl")
+include("accelerate.jl")
 include("predicates.jl")
 
 include("custom_arrays.jl")
