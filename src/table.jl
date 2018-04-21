@@ -28,17 +28,22 @@ function Table{names}(nt::NamedTuple{names2, <:Tuple{Vararg{AbstractVector}}}, i
     end
 end
 
-colnames(::AbstractArray{<:NamedTuple{names}}) where {names} = names
-columns(t::Table{names}) where {names} = NamedTuple{names}(t.data)
-
+# Helpers to get the data directly from the Table struct
 getindexes(::AbstractVector{<:NamedTuple}) = ()
-getindexes(t::Table) = Core.getfield(t, :indexes) # Do we want `getproperty(t, name) = columns(t).name`?
+getindexes(t::Table) = Core.getfield(t, :indexes)
+getdata(t::Table) = Core.getfield(t, :data)
 
-@inline size(t::Table) = size(first(t.data))
-@inline axes(t::Table) = axes(first(t.data))
+# Simple column access via `table.columnname`
+@inline Base.getproperty(t::Table, name::Symbol) = getdata(t)[_find(colnames(t), name)]
+
+colnames(::AbstractArray{<:NamedTuple{names}}) where {names} = names
+columns(t::Table{names}) where {names} = NamedTuple{names}(getdata(t))
+
+@inline size(t::Table) = size(first(getdata(t)))
+@inline axes(t::Table) = axes(first(getdata(t)))
 
 @generated function getindex(t::Table{names}, i::Int) where {names}
-    exprs = [:($(names[j]) = t.data[$j][i]) for j = 1:length(names)]
+    exprs = [:($(names[j]) = getdata(t)[$j][i]) for j = 1:length(names)]
     return quote
         @_propagate_inbounds_meta
         $(Expr(:tuple, exprs...))
@@ -46,7 +51,7 @@ getindexes(t::Table) = Core.getfield(t, :indexes) # Do we want `getproperty(t, n
 end
 
 @generated function getindex(t::Table{names}, i::AbstractVector{Int}) where {names}
-    exprs = [:(t.data[$j][i]) for j = 1:length(names)]
+    exprs = [:(getdata(t)[$j][i]) for j = 1:length(names)]
     return quote
         @_propagate_inbounds_meta
         return Table{names}($(Expr(:tuple, exprs...)), ())  # Indexing always removes acceleration indexes, for now
@@ -54,7 +59,7 @@ end
 end
 
 function getindex(t::Table{names}, ::Colon) where {names}
-    return Table{names}(copy.(t.data), ()) # Indexing always removes acceleration indexes, for now (compare with `copy`)
+    return Table{names}(copy.(getdata(t)), ()) # Indexing always removes acceleration indexes, for now (compare with `copy`)
 end
 
 @generated function setindex!(t::Table{names}, v::NamedTuple{names2}, i) where {names, names2}
@@ -66,7 +71,7 @@ end
 
     # TODO - rebuild indices? or make them immutable? or let the user "use with care"?
 
-    exprs = [:(t.data[$j][i] = getproperty(v, $(Expr(:quote, names[j])))) for j = 1:length(names)]
+    exprs = [:(getdata(t)[$j][i] = getproperty(v, $(Expr(:quote, names[j])))) for j = 1:length(names)]
     return quote
         @_propagate_inbounds_meta
         if getindexes(t) !== ()
@@ -83,7 +88,7 @@ function similar(t::Table, ::Type{NamedTuple{names, Ts}}, dims::Tuple{Int}) wher
 end
 
 function copy(t::Table{names}) where {names}
-    return Table{names}(copy.(t.data), copy.(getindexes(t)))
+    return Table{names}(copy.(getdata(t)), copy.(getindexes(t)))
 end
 
 @inline function (p::Project{names})(t::Table) where {names}
@@ -94,5 +99,5 @@ end
 
 @inline function (r::Rename{oldnames, newnames})(t::Table{names}) where {oldnames, newnames, names}
     names2 = _rename(Val(oldnames), Val(newnames), Val(names))
-    return Table{names2}(t.data, r(t.indexes))
+    return Table{names2}(getdata(t), r(getfield(t, :indexes)))
 end

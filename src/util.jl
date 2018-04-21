@@ -1,3 +1,12 @@
+@pure function _find(names::Tuple{Vararg{Symbol}}, name::Symbol)
+    for i in 1:length(names)
+        if names[i] === name
+            return i
+        end
+    end
+    error("Cannot find $name in $names")
+end
+
 @pure function _issubset(a::Tuple{Vararg{Symbol}}, b::Tuple{Vararg{Symbol}})
     for sa ∈ a
         if sa ∉ b

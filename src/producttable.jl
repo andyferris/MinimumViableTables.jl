@@ -178,12 +178,12 @@ function _findall(pred::Equals, t::ProductTable, index1::SortIndex, index2::Sort
         return out
     end
     
-    @inbounds t1 = view(t.t1.data[1], index1.order) # a single column.
+    @inbounds t1 = view(getdata(t.t1)[1], index1.order) # a single column.
     n1 = length(t1)
     i1 = 1
     @inbounds x1 = t1[1]
 
-    @inbounds t2 = view(t.t2.data[1], index2.order) # a single column.
+    @inbounds t2 = view(getdata(t.t2)[1], index2.order) # a single column.
     n2 = length(t2)
     i2 = 1
     @inbounds x2 = t2[1]
@@ -219,12 +219,12 @@ function _findall(pred::Equals, t::ProductTable, index1::UniqueSortIndex, index2
         return out
     end
     
-    @inbounds t1 = view(t.t1.data[1], index1.order) # a single column.
+    @inbounds t1 = view(getdata(t.t1)[1], index1.order) # a single column.
     n1 = length(t1)
     i1 = 1
     @inbounds x1 = t1[1]
 
-    @inbounds t2 = view(t.t2.data[1], index2.order) # a single column.
+    @inbounds t2 = view(getdata(t.t2)[1], index2.order) # a single column.
     n2 = length(t2)
     i2 = 1
     @inbounds x2 = t2[1]
@@ -257,12 +257,12 @@ function _findall(pred::Equals, t::ProductTable, index1::SortIndex, index2::Uniq
         return out
     end
     
-    @inbounds t1 = view(t.t1.data[1], index1.order) # a single column.
+    @inbounds t1 = view(getdata(t.t1)[1], index1.order) # a single column.
     n1 = length(t1)
     i1 = 1
     @inbounds x1 = t1[1]
 
-    @inbounds t2 = view(t.t2.data[1], index2.order) # a single column.
+    @inbounds t2 = view(getdata(t.t2)[1], index2.order) # a single column.
     n2 = length(t2)
     i2 = 1
     @inbounds x2 = t2[1]
@@ -295,12 +295,12 @@ function _findall(pred::Equals, t::ProductTable, index1::UniqueSortIndex, index2
         return out
     end
     
-    @inbounds t1 = view(t.t1.data[1], index1.order) # a single column.
+    @inbounds t1 = view(getdata(t.t1)[1], index1.order) # a single column.
     n1 = length(t1)
     i1 = 1
     @inbounds x1 = t1[1]
 
-    @inbounds t2 = view(t.t2.data[1], index2.order) # a single column.
+    @inbounds t2 = view(getdata(t.t2)[1], index2.order) # a single column.
     n2 = length(t2)
     i2 = 1
     @inbounds x2 = t2[1]

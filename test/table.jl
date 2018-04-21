@@ -12,6 +12,10 @@
 
     @test colnames(t) === (:a, :b)
     @test columns(t) === (a = va, b = vb)
+    @test MinimumViableTables.getdata(t) === (va, vb)
+    @test t.a === va
+    @test t.b === vb
+    @test_throws ErrorException t.c
     @test length(t) === 3
     @test size(t) === (3,)
     @test axes(t) === (Base.OneTo(3),)

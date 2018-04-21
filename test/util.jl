@@ -1,4 +1,10 @@
 @testset "util" begin
+    @testset "_find" begin
+        @test _find((:a, :b), :a) === 1
+        @test _find((:a, :b), :b) === 2
+        @test_throws ErrorException _find((:a, :b), :c)
+    end
+
     @testset "_issubset" begin
         @test _issubset((), ())
         @test _issubset((), (:a,))
