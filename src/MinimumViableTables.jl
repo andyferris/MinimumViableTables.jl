@@ -11,6 +11,7 @@ import LinearAlgebra: cross, ×
 using Unicode
 using Indexing
 #using DataStreams
+import IteratorInterfaceExtensions, TableTraits, TableTraitsUtils
 
 export colnames, columns, accelerators, project, Project, accelerate, rename, Rename
 

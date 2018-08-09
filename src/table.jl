@@ -28,6 +28,20 @@ function Table{names}(nt::NamedTuple{names2, <:Tuple{Vararg{AbstractVector}}}, i
     end
 end
 
+# TableTraits.jl integration
+function Table(source)
+    iit = TableTraits.isiterabletable(source)
+    if iit===true
+        cols, names = TableTraitsUtils.create_columns_from_iterabletable(source, na_representation=:datavalue)
+    elseif iit===missing
+        error("Not yet implemented.")
+    else
+        error("Argument is not a table.")
+    end
+
+    return Table(NamedTuple{tuple(names...),Tuple{typeof.(cols)...}}(cols))
+end
+
 # Helpers to get the data directly from the Table struct
 accelerators(::AbstractVector{<:NamedTuple}) = ()
 accelerators(t::Table) = Core.getfield(t, :accelerators)
